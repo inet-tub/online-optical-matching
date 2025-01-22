@@ -127,7 +127,7 @@ if alg == "det":
     
     with lock:
         with open(outfile, 'a') as file:
-            print("deterministic", alpha, 0, cost,file=file)
+            print(trace, "deterministic", alpha, 0, cost,file=file)
 
 # Oblivious Algorithm
 # Reconfigure blindly after every timeslot
@@ -151,7 +151,7 @@ if alg == "oblivious":
             break
     with lock:
         with open(outfile, 'a') as file:
-            print("oblivious", alpha, 0, cost,file=file)
+            print(trace, "oblivious", alpha, 0, cost,file=file)
 
 #%%
 
@@ -185,7 +185,7 @@ if alg == "staticoff":
             break
     with lock:
         with open(outfile, 'a') as file:
-            print("static", alpha, 0, cost,file=file)
+            print(trace, "static", alpha, 0, cost,file=file)
 
 #%%
 
@@ -216,7 +216,7 @@ if alg == "offline":
 
     with lock:
         with open(outfile, 'a') as file:
-            print("offline", alpha, 0, cost,file=file)
+            print(trace, "offline", alpha, 0, cost,file=file)
 #%%
 
 # Prediction augmented algorithm
@@ -271,4 +271,4 @@ if alg == "pred":
             break
     with lock:
         with open(outfile, 'a') as file:
-            print("pred", alpha, error, cost,file=file)
+            print(trace, "pred", alpha, error, cost,file=file)

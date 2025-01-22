@@ -42,7 +42,7 @@ NUMNODES=64
 ALGS=("det" "oblivious" "staticoff" "offline")
 OUTFILE=$DIR/results/results.csv
 
-echo "alg,alpha,error,cost" > $OUTFILE
+echo "trace alg alpha error cost" > $OUTFILE
 
 for TRACE in ${TRACES[@]};do
 	for ALG in ${ALGS[@]};do
