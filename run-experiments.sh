@@ -10,14 +10,16 @@ if [ ! -d "$DIR/data" ]; then
 	mkdir $DIR/data
 fi
 
-cd $DIR/data
-wget https://nextcloud.inet.tu-berlin.de/s/mm5BBsDAHgb5wTR/download/hpc_cesar_nekbone.zip
-unzip hpc_cesar_nekbone.zip
-wget https://nextcloud.inet.tu-berlin.de/s/BiDe8RHzXcMWDbm/download/hpc_cesar_mocfe.zip
-unzip hpc_cesar_mocfe.zip
-wget https://nextcloud.inet.tu-berlin.de/s/WcFsd5NweRDjSWr/download/hpc_exact_boxlib_multigrid_c_large.zip
-unzip hpc_exact_boxlib_multigrid_c_large.zip
-cd $DIR
+if [[ $1 -eq 1 ]];then
+	cd $DIR/data
+	wget https://nextcloud.inet.tu-berlin.de/s/mm5BBsDAHgb5wTR/download/hpc_cesar_nekbone.zip
+	unzip hpc_cesar_nekbone.zip
+	wget https://nextcloud.inet.tu-berlin.de/s/BiDe8RHzXcMWDbm/download/hpc_cesar_mocfe.zip
+	unzip hpc_cesar_mocfe.zip
+	wget https://nextcloud.inet.tu-berlin.de/s/WcFsd5NweRDjSWr/download/hpc_exact_boxlib_multigrid_c_large.zip
+	unzip hpc_exact_boxlib_multigrid_c_large.zip
+	cd $DIR
+fi
 
 # Compute OFF first
 ALPHAS=(2 4 6 8 10)
