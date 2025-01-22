@@ -6,7 +6,7 @@ import matplotlib.colors as colors
 from matplotlib import rcParams
 #%%
 alpha = 100
-maxRequests = 10000 # set it to a lower value for small test cases
+maxRequests = 100000000 # set it to a lower value for small test cases
 numNodes = 64
 traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib"]
 
@@ -27,6 +27,8 @@ for trace in traces:
         src = request["srcip"]
         dst = request["dstip"]
         requestMatrix[src][dst] += 1
+        if t >= maxRequests:
+            break
 
     cmap = 'CMRmap_r'
     maxValue = np.max(requestMatrix)

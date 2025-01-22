@@ -102,6 +102,8 @@ for t, request in data.iterrows():
 
     # Early exit based on maxRequests
     if t >= maxRequests:
+    	if (len(offlineAlgMatching) == 0):
+    		offlineAlgMatching.append((matchingOFF, prevTime))
         break
     # print("Constructing OFF timeslot =",t, " for alpha = ", alpha)
 

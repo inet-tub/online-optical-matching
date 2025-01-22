@@ -20,26 +20,27 @@ unzip hpc_exact_boxlib_multigrid_c_large.zip
 cd $DIR
 
 # Compute OFF first
-ALPHAS=(1 2 3 4 5 6 7 8 9 10)
-TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib")
-MAXREQUESTS=10000
+ALPHAS=(2 4 6 8 10)
+# TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib")
+TRACES=("HPC-Boxlib")
+MAXREQUESTS=10000000000
 NUMNODES=64
 
-# for TRACE in ${TRACES[@]};do
-# 	for ALPHA in ${ALPHAS[@]};do
-# 		while [[ $(ps aux| grep compute-off | wc -l) -gt $(nproc) ]];do
-# 			sleep 5
-# 			echo "waiting for cores"
-# 		done
-# 		(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES > /dev/null 2> /dev/null) &
-# 	done
-# done
+for TRACE in ${TRACES[@]};do
+	for ALPHA in ${ALPHAS[@]};do
+		while [[ $(ps aux| grep compute-off | wc -l) -gt $(nproc) ]];do
+			sleep 5
+			echo "waiting for cores"
+		done
+		(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES )
+	done
+done
 
 
-# while [[ $(ps aux| grep compute-off | wc -l) -gt 1 ]];do
-# 	sleep 5
-# 	echo "waiting for off computations..."
-# done
+while [[ $(ps aux| grep compute-off | wc -l) -gt 1 ]];do
+	sleep 5
+	echo "waiting for off computations..."
+done
 
 ALGS=("det" "oblivious" "staticoff" "offline")
 OUTFILE=$DIR/results/results.csv
