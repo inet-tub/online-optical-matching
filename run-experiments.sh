@@ -29,7 +29,7 @@ NUMNODES=64
 # 			sleep 5
 # 			echo "waiting for cores"
 # 		done
-# 		(python compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES > /dev/null 2> /dev/null) &
+# 		(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES > /dev/null 2> /dev/null) &
 # 	done
 # done
 
@@ -51,7 +51,7 @@ for TRACE in ${TRACES[@]};do
 				sleep 5
 				echo "waiting for cores to run $TRACE $ALG $ALPHA"
 			done
-			(python run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE $ALG ) &
+			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE $ALG ) &
 		done
 	done
 done
@@ -65,7 +65,7 @@ for TRACE in ${TRACES[@]};do
 				sleep 5
 				echo "waiting for cores to run $TRACE $ALG $ALPHA"
 			done
-			(python run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $ERROR $OUTFILE $ALG > /dev/null 2> /dev/null) &
+			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $ERROR $OUTFILE $ALG > /dev/null 2> /dev/null) &
 		done
 	done
 done
