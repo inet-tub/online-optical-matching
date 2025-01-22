@@ -32,7 +32,7 @@ for TRACE in ${TRACES[@]};do
 			sleep 5
 			echo "waiting for cores"
 		done
-		(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES )
+		(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES ) &
 	done
 done
 

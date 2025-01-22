@@ -109,4 +109,4 @@ for t, request in data.iterrows():
 
 with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'.pkl','wb') as f:
     pickle.dump(offlineAlgMatching, f)
-    print("dump", alpha)
+    print("dump", alpha, trace)
