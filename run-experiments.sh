@@ -27,6 +27,7 @@ TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib")
 # TRACES=("HPC-Boxlib")
 MAXREQUESTS=10000000000
 NUMNODES=64
+COMPRESS=1
 
 for TRACE in ${TRACES[@]};do
 	for ALPHA in ${ALPHAS[@]};do
@@ -34,7 +35,7 @@ for TRACE in ${TRACES[@]};do
 			sleep 5
 			echo "waiting for cores"
 		done
-		(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES ) &
+		(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $COMPRESS) &
 	done
 done
 
@@ -56,7 +57,7 @@ for TRACE in ${TRACES[@]};do
 				sleep 5
 				echo "waiting for cores to run $TRACE $ALG $ALPHA"
 			done
-			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE $ALG ) &
+			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE $ALG $COMPRESS) &
 		done
 	done
 done
@@ -70,7 +71,7 @@ for TRACE in ${TRACES[@]};do
 				sleep 5
 				echo "waiting for cores to run $TRACE $ALG $ALPHA"
 			done
-			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $ERROR $OUTFILE $ALG > /dev/null 2> /dev/null) &
+			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $ERROR $OUTFILE $ALG $COMPRESS > /dev/null 2> /dev/null) &
 		done
 	done
 done

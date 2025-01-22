@@ -65,8 +65,19 @@ trace = str(sys.argv[1])
 alpha = int(sys.argv[2])
 maxRequests = int(sys.argv[3])
 numNodes = int(sys.argv[4])
+compress = int(sys.argv[5])
 
 alpha = alpha*numNodes
+
+k={}
+if compress == 1:
+    k["HPC-Mocfe"]=100
+    k["HPC-Nekbone"]=50
+    k["HPC-Boxlib"]=10
+
+def process_part(part):
+    grouped = part.groupby(['srcip', 'dstip']).size().reset_index(name='count')
+    return grouped
 
 df = pd.read_csv("data/"+tracefiles[trace])
 data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]
@@ -74,6 +85,16 @@ src_set = set(data["srcip"])
 dst_set = set(data["dstip"])
 nodes_set = np.arange(max(len(src_set),len(dst_set)))
 numNodes = len(nodes_set)
+
+if compress == 1:
+    K = k[trace]
+    split_size = len(data) // K
+    parts = [data.iloc[i * split_size:(i + 1) * split_size] for i in range(K)]
+    if len(data) % K != 0:
+        parts.append(data.iloc[K * split_size:])
+
+    processed_parts = [process_part(part) for part in parts]
+    data = pd.concat(processed_parts, ignore_index=True)
 
 
 offlineAlgTrackingGraph = initializeTrackingGraph(len(nodes_set))
