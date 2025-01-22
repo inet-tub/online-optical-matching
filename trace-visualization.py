@@ -8,15 +8,16 @@ from matplotlib import rcParams
 alpha = 100
 maxRequests = 10000 # set it to a lower value for small test cases
 numNodes = 64
-traces=["HPC-Mocfe", "HPC-Nekbone"]
+traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib"]
 
 tracefiles={}
 tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
 tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
+tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
 rcParams.update({'font.size': 18})
 for trace in traces:
     df = pd.read_csv("data/"+tracefiles[trace])
-    data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]    
+    data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]
     src_set = set(data["srcip"])
     dst_set = set(data["dstip"])
     nodes_set = np.arange(max(len(src_set),len(dst_set)))

@@ -15,11 +15,13 @@ wget https://nextcloud.inet.tu-berlin.de/s/mm5BBsDAHgb5wTR/download/hpc_cesar_ne
 unzip hpc_cesar_nekbone.zip
 wget https://nextcloud.inet.tu-berlin.de/s/BiDe8RHzXcMWDbm/download/hpc_cesar_mocfe.zip
 unzip hpc_cesar_mocfe.zip
+wget https://nextcloud.inet.tu-berlin.de/s/WcFsd5NweRDjSWr/download/hpc_exact_boxlib_multigrid_c_large.zip
+unzip hpc_exact_boxlib_multigrid_c_large.zip
 cd $DIR
 
 # Compute OFF first
 ALPHAS=(1 2 3 4 5 6 7 8 9 10)
-TRACES=("HPC-Mocfe" "HPC-Nekbone")
+TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib")
 MAXREQUESTS=10000
 NUMNODES=64
 

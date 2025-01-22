@@ -9,10 +9,12 @@ import sys
 import pickle
 #%%
 
-traces=["HPC-Mocfe", "HPC-Nekbone"]
+traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib"]
+
 tracefiles={}
 tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
 tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
+tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
 
 trace = str(sys.argv[1])
 alpha = int(sys.argv[2])
