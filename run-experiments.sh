@@ -21,8 +21,8 @@ cd $DIR
 
 # Compute OFF first
 ALPHAS=(2 4 6 8 10)
-# TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib")
-TRACES=("HPC-Boxlib")
+TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib")
+# TRACES=("HPC-Boxlib")
 MAXREQUESTS=10000000000
 NUMNODES=64
 
