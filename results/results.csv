@@ -1,133 +1,136 @@
-alg,alpha,error,cost
-deterministic 128 0 533376
-deterministic 320 0 465463
-deterministic 192 0 473002
-deterministic 64 0 604305
-deterministic 256 0 504098
-deterministic 384 0 469351
-deterministic 448 0 454745
-deterministic 576 0 417458
-deterministic 640 0 447751
-deterministic 512 0 475765
-oblivious 128 0 1289976
-oblivious 448 0 4490296
-oblivious 64 0 649912
-oblivious 256 0 2570104
-oblivious 640 0 6410488
-oblivious 192 0 1930040
-oblivious 384 0 3850232
-oblivious 320 0 3210168
-oblivious 512 0 5130360
-oblivious 576 0 5770424
-static 64 0 6922
-static 192 0 6922
-static 128 0 6922
-static 256 0 6922
-static 576 0 6922
-static 384 0 6922
-offline 192 0 26469
-offline 64 0 23001
-offline 320 0 26211
-offline 448 0 26513
-offline 256 0 26126
-offline 384 0 26364
-offline 128 0 25180
-static 320 0 6922
-static 448 0 6922
-offline 576 0 26390
-offline 512 0 26243
-static 640 0 6922
-offline 640 0 26699
-static 512 0 6922
-deterministic 64 0 260975
-deterministic 128 0 274367
-oblivious 64 0 334007
-deterministic 448 0 237584
-deterministic 384 0 262355
-deterministic 256 0 260706
-deterministic 192 0 260978
-deterministic 640 0 233827
-oblivious 128 0 662967
-deterministic 512 0 248433
-oblivious 192 0 991927
-deterministic 576 0 226916
-deterministic 320 0 252801
-oblivious 320 0 1649847
-oblivious 640 0 3294647
-oblivious 256 0 1320887
-oblivious 448 0 2307767
-oblivious 576 0 2965687
-oblivious 512 0 2636727
-oblivious 384 0 1978807
-static 64 0 4380
-static 128 0 4380
-static 256 0 4380
-static 320 0 4380
-static 384 0 4380
-static 448 0 4380
-static 192 0 4380
-offline 512 0 16033
-offline 384 0 16071
-offline 64 0 12082
-static 512 0 4380
-offline 320 0 15981
-offline 256 0 15864
-static 576 0 4380
-static 640 0 4380
-offline 448 0 16331
-offline 128 0 14593
-offline 576 0 16373
-offline 192 0 15738
-offline 640 0 15808
-pred 64 0 23860
-pred 128 2 25614
-pred 64 2 24121
-pred 128 0 25253
-pred 192 0 26816
-pred 256 0 26435
-pred 192 2 27030
-pred 320 0 26585
-pred 448 0 26973
-pred 512 0 26795
-pred 576 0 26974
-pred 256 2 26733
-pred 384 0 26766
-pred 384 2 27017
-pred 320 2 26868
-pred 576 2 27200
-pred 640 2 27011
-pred 640 0 26740
-pred 448 2 27228
-pred 512 2 27199
-pred 64 4 24356
-pred 128 4 25958
-pred 192 4 27277
-pred 256 4 27027
-pred 320 4 27130
-pred 576 4 27514
-pred 64 8 25391
-pred 384 4 27342
-pred 448 4 27511
-pred 640 4 27299
-pred 320 8 28116
-pred 512 4 27501
-pred 128 8 27082
-pred 192 8 28257
-pred 256 8 28028
-pred 384 8 28324
-pred 448 8 28505
-pred 576 8 28596
-pred 512 8 28545
-pred 640 8 28293
-pred 64 0 12183
-pred 128 0 14758
-pred 192 0 15997
-pred 256 0 16131
-pred 320 0 16311
-pred 384 0 16459
-pred 448 0 16783
-pred 512 0 16603
-pred 64 16 26923
-pred 64 2 12440
-pred 576 0 16951
-pred 640 0 16451
+trace alg alpha error cost
+HPC-Mocfe deterministic 256 0 532438
+HPC-Mocfe deterministic 128 0 590825
+HPC-Mocfe deterministic 384 0 522748
+HPC-Mocfe deterministic 512 0 486899
+HPC-Mocfe deterministic 640 0 476534
+HPC-Mocfe offline 128 0 28307
+HPC-Mocfe offline 256 0 28527
+HPC-Mocfe offline 384 0 28413
+HPC-Mocfe offline 640 0 28420
+HPC-Mocfe offline 512 0 28294
+HPC-Mocfe static 128 0 7321
+HPC-Mocfe static 384 0 7321
+HPC-Mocfe static 640 0 7321
+HPC-Mocfe static 512 0 7321
+HPC-Mocfe oblivious 256 0 2554159
+HPC-Mocfe static 256 0 7321
+HPC-Mocfe oblivious 128 0 1281967
+HPC-Mocfe oblivious 512 0 5098543
+HPC-Mocfe oblivious 384 0 3826351
+HPC-Mocfe oblivious 640 0 6370735
+HPC-Nekbone deterministic 128 0 701768
+HPC-Nekbone deterministic 384 0 590084
+HPC-Nekbone deterministic 512 0 559875
+HPC-Nekbone deterministic 640 0 557214
+HPC-Nekbone offline 512 0 36422
+HPC-Nekbone deterministic 256 0 609981
+HPC-Nekbone offline 640 0 36183
+HPC-Nekbone offline 256 0 36378
+HPC-Nekbone offline 384 0 36541
+HPC-Nekbone static 128 0 9320
+HPC-Nekbone static 256 0 9320
+HPC-Nekbone static 512 0 9320
+HPC-Nekbone offline 128 0 36159
+HPC-Nekbone static 640 0 9320
+HPC-Nekbone static 384 0 9320
+HPC-Nekbone oblivious 384 0 4282177
+HPC-Nekbone oblivious 512 0 5705921
+HPC-Nekbone oblivious 640 0 7129665
+HPC-Nekbone oblivious 128 0 1434689
+HPC-Nekbone oblivious 256 0 2858433
+HPC-Boxlib deterministic 128 0 590970
+HPC-Boxlib offline 512 0 33772
+HPC-Boxlib static 256 0 8720
+HPC-Boxlib deterministic 256 0 569376
+HPC-Boxlib deterministic 640 0 580075
+HPC-Boxlib offline 128 0 33759
+HPC-Boxlib static 128 0 8720
+HPC-Boxlib oblivious 128 0 1207284
+HPC-Boxlib static 384 0 8720
+HPC-Boxlib deterministic 384 0 514907
+HPC-Boxlib offline 384 0 34014
+HPC-Boxlib offline 256 0 33976
+HPC-Boxlib oblivious 256 0 2405364
+HPC-Boxlib offline 640 0 33655
+HPC-Boxlib static 640 0 8720
+HPC-Boxlib deterministic 512 0 465865
+HPC-Boxlib oblivious 384 0 3603444
+HPC-Boxlib oblivious 512 0 4801524
+HPC-Boxlib oblivious 640 0 5999604
+HPC-Boxlib static 512 0 8720
+HPC-Mocfe pred 128 0 28599
+HPC-Mocfe pred 128 2 28948
+HPC-Nekbone pred 128 0 36398
+HPC-Mocfe pred 128 4 29439
+HPC-Nekbone pred 128 2 36631
+HPC-Nekbone pred 128 4 36793
+HPC-Mocfe pred 128 8 29993
+HPC-Mocfe pred 256 0 28869
+HPC-Mocfe pred 256 2 29078
+HPC-Mocfe pred 384 0 28832
+HPC-Mocfe pred 256 4 29474
+HPC-Mocfe pred 512 0 28826
+HPC-Mocfe pred 384 2 29071
+HPC-Nekbone pred 256 0 36794
+HPC-Mocfe pred 512 2 29091
+HPC-Mocfe pred 640 0 29075
+HPC-Nekbone pred 256 2 37051
+HPC-Mocfe pred 384 4 29371
+HPC-Mocfe pred 128 16 31109
+HPC-Mocfe pred 512 4 29431
+HPC-Nekbone pred 256 4 37269
+HPC-Mocfe pred 640 2 29315
+HPC-Mocfe pred 256 8 30078
+HPC-Nekbone pred 384 0 37017
+HPC-Nekbone pred 384 2 37185
+HPC-Mocfe pred 640 4 29651
+HPC-Mocfe pred 384 8 29988
+HPC-Nekbone pred 384 4 37392
+HPC-Mocfe pred 512 8 30030
+HPC-Nekbone pred 512 0 37003
+HPC-Mocfe pred 256 16 31305
+HPC-Nekbone pred 512 2 37179
+HPC-Nekbone pred 640 2 36986
+HPC-Nekbone pred 640 0 36830
+HPC-Mocfe pred 640 8 30258
+HPC-Nekbone pred 512 4 37380
+HPC-Nekbone pred 640 4 37240
+HPC-Mocfe pred 384 16 31268
+HPC-Mocfe pred 512 16 31316
+HPC-Mocfe pred 640 16 31525
+HPC-Boxlib pred 256 0 34255
+HPC-Boxlib pred 128 4 34179
+HPC-Boxlib pred 384 8 34681
+HPC-Boxlib pred 128 0 34025
+HPC-Boxlib pred 384 0 34412
+HPC-Boxlib pred 512 16 34805
+HPC-Boxlib pred 256 4 34383
+HPC-Nekbone pred 128 8 37220
+HPC-Boxlib pred 512 0 34292
+HPC-Boxlib pred 128 2 34085
+HPC-Boxlib pred 128 8 34314
+HPC-Boxlib pred 256 2 34307
+HPC-Boxlib pred 384 4 34532
+HPC-Boxlib pred 512 2 34341
+HPC-Nekbone pred 512 16 38658
+HPC-Nekbone pred 128 16 38117
+HPC-Boxlib pred 384 2 34467
+HPC-Boxlib pred 256 8 34542
+HPC-Nekbone pred 256 16 38388
+HPC-Nekbone pred 256 8 37667
+HPC-Boxlib pred 640 0 34296
+HPC-Boxlib pred 384 16 34916
+HPC-Boxlib pred 128 16 34581
+HPC-Boxlib pred 512 4 34427
+HPC-Boxlib pred 640 2 34338
+HPC-Nekbone pred 512 8 37818
+HPC-Boxlib pred 640 4 34411
+HPC-Boxlib pred 640 8 34542
+HPC-Boxlib pred 512 8 34559
+HPC-Nekbone pred 384 16 38608
+HPC-Nekbone pred 384 8 37832
+HPC-Boxlib pred 256 16 34836
+HPC-Boxlib pred 640 16 34816
+HPC-Nekbone pred 640 8 37700
+HPC-Nekbone pred 640 16 38506
