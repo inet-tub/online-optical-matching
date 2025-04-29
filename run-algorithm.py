@@ -25,6 +25,7 @@ outfile = str(sys.argv[6])
 alg = str(sys.argv[7])
 lock = FileLock(outfile+".lock")
 compress = int(sys.argv[8])
+freq = int(sys.argv[9])
 
 alpha = alpha*numNodes
 
@@ -157,6 +158,7 @@ if alg == "oblivious":
     onlineAlgMatching = initializeMatching(len(nodes_set),10)
     t = 0
     cost = 0
+    counter = 0
     for t, request in data.iterrows():
         # print(request["srcip"], request["dstip"])
         src = request["srcip"]
@@ -165,15 +167,17 @@ if alg == "oblivious":
             cost = cost + 0 # Nothing to do. Just for readablity
         else:
             cost = cost + 1
-        onlineAlgMatching = initializeMatching(len(nodes_set),t)
-        cost = cost + alpha
+        if counter >= freq:
+            onlineAlgMatching = initializeMatching(len(nodes_set),t)
+            cost = cost + alpha
+            counter = 0
         
         # Early exit based on maxRequests
         if t >= maxRequests:
             break
     with lock:
         with open(outfile, 'a') as file:
-            print(trace, "oblivious", alpha, 0, cost,file=file)
+            print(trace, "oblivious-"+str(freq), alpha, 0, cost,file=file)
 
 #%%
 

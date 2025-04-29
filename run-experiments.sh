@@ -57,7 +57,20 @@ for TRACE in ${TRACES[@]};do
 				sleep 5
 				echo "waiting for cores to run $TRACE $ALG $ALPHA"
 			done
-			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE $ALG $COMPRESS) &
+			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE $ALG $COMPRESS "") &
+		done
+	done
+done
+
+OBLS=(1 4 16 64)
+for TRACE in ${TRACES[@]};do
+	for ALG in ${OBLS[@]};do
+		for ALPHA in ${ALPHAS[@]};do
+			while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(nproc) ]];do
+				sleep 5
+				echo "waiting for cores to run $TRACE $ALG $ALPHA"
+			done
+			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE "oblivious" $COMPRESS $ALG) &
 		done
 	done
 done
