@@ -4,7 +4,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 cd $DIR
-
+source .venv/bin/activate
 # check if data directory exists, if not craete
 if [ ! -d "$DIR/data" ]; then
 	mkdir $DIR/data
@@ -23,11 +23,11 @@ fi
 
 # Compute OFF first
 ALPHAS=(2 4 6 8 10)
-TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib")
+TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib" "HPC-Combined")
 # TRACES=("HPC-Boxlib")
 MAXREQUESTS=10000000000
 NUMNODES=64
-COMPRESS=1
+COMPRESS=0
 
 for TRACE in ${TRACES[@]};do
 	for ALPHA in ${ALPHAS[@]};do

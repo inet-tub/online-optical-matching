@@ -11,12 +11,13 @@ import pickle
 import sys
 
 
-traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib"]
+traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
 
 tracefiles={}
 tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
 tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
 tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
+tracefiles["HPC-Combined"]="hpc_combined.csv"
 
 def matching_with_weight_sum(graph, alpha, maxCardinality):
     matchings = nx.algorithms.matching.max_weight_matching(graph, maxcardinality=maxCardinality, weight='weight')
@@ -74,6 +75,7 @@ if compress == 1:
     k["HPC-Mocfe"]=100
     k["HPC-Nekbone"]=50
     k["HPC-Boxlib"]=10
+    k["HPC-Combined"]=4
 
 def process_part(part):
     grouped = part.groupby(['srcip', 'dstip']).size().reset_index(name='count')

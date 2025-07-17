@@ -13,19 +13,22 @@ numNodes = 64
 
 plots_dir = "plots/"
 
-traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib"]
+traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
+# traces=["HPC-Boxlib"]
 
-compress = 1 #int(sys.argv[1])
+compress = 0 #int(sys.argv[1])
 k={}
 if compress == 1:
     k["HPC-Mocfe"]=100
     k["HPC-Nekbone"]=50
     k["HPC-Boxlib"]=10
+    k["HPC-Combined"]=4
 
 tracefiles={}
 tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
 tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
 tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
+tracefiles["HPC-Combined"]="hpc_combined.csv"
 rcParams.update({'font.size': 24})
 
 def process_part(part):
@@ -61,13 +64,13 @@ for trace in traces:
     with open('data/'+str(trace)+'-'+str(alpha)+'.pkl','wb') as f:
         pickle.dump(requestMatrix, f)
         print("dump", trace)
-    # cmap = 'CMRmap_r'
-    # maxValue = np.max(requestMatrix)
-    # fig, ax = plt.subplots(1,1, figsize=(8, 6))
-    # plt.imshow(requestMatrix, cmap=cmap,norm=colors.LogNorm(vmin=1,vmax=maxValue,clip=True), aspect='auto')
-    # plt.colorbar(label='Number of Requests')
-    # # plt.title(trace)
-    # plt.xlabel('Destination Index')
-    # plt.ylabel('Source Index')
-    # fig.tight_layout()
-    # fig.savefig(plots_dir+trace+'.pdf')
+    cmap = 'CMRmap_r'
+    maxValue = np.max(requestMatrix)
+    fig, ax = plt.subplots(1,1, figsize=(8, 6))
+    plt.imshow(requestMatrix, cmap=cmap,norm=colors.LogNorm(vmin=1,vmax=maxValue,clip=True), aspect='auto')
+    plt.colorbar(label='Number of Requests')
+    # plt.title(trace)
+    plt.xlabel('Destination Index')
+    plt.ylabel('Source Index')
+    fig.tight_layout()
+    fig.savefig(plots_dir+trace+'.pdf')
