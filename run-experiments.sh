@@ -18,6 +18,9 @@ if [[ $1 -eq 1 ]];then
 	unzip hpc_cesar_mocfe.zip
 	wget https://nextcloud.inet.tu-berlin.de/s/WcFsd5NweRDjSWr/download/hpc_exact_boxlib_multigrid_c_large.zip
 	unzip hpc_exact_boxlib_multigrid_c_large.zip
+	cat hpc_cesar_nekbone.csv >> hpc_combined.csv
+	cat hpc_cesar_mocfe.csv | tail -n +2 >> hpc_combined.csv
+	cat hpc_exact_boxlib_multigrid_c_large.csv | tail -n +2 >> hpc_combined.csv
 	cd $DIR
 fi
 
