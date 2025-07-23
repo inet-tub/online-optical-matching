@@ -15,7 +15,7 @@ from matplotlib import rcParams
 import sys
 #%%
 plots_dir = "plots/"
-plots_dir = "/home/vamsi/src/phd/writings/rematching/0-current/plots/"
+# plots_dir = "/home/vamsi/src/phd/writings/rematching/0-current/plots/"
 
 results_dir="results/"
 
@@ -23,7 +23,7 @@ df = pd.read_csv(results_dir+'results.csv',delimiter=' ')
 minValue = np.min(df['cost'])
 maxValue = np.max(df['cost'])
 #%%
-traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib"]
+traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
 
 algs = ["deterministic", "oblivious", "static" , "offline"]
 
@@ -37,6 +37,7 @@ errors = [0, 2, 4, 8, 16]
 rcParams.update({'font.size': 24})
 
 for trace in traces:
+    print(trace)
     dft = df[(df['trace']==trace)&(df['alg']!="pred")]
     arr = np.zeros((len(algs),len(alphas)))
     for index, row in dft.iterrows():
@@ -59,7 +60,7 @@ for trace in traces:
             ax.text(j, i, text, ha="center", va="center", color="black")
     
     fig.colorbar(cax, ax=ax, label='Noramlized Cost')
-    # ax.set_title(trace)
+    ax.set_title(trace)
     ax.set_xlabel("Reconfiguration cost (" + r'$\alpha = x \cdot n$' + ")")
     ax.set_xticks(np.arange(len(alphas)))
     ax.set_xticklabels(np.arange(1,len(alphas)+1)*2)
@@ -71,7 +72,7 @@ for trace in traces:
     
     
 #%%
-traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib"]
+traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
 
 algs = ["pred"]
 

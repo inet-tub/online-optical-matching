@@ -173,7 +173,7 @@ if alg == "oblivious":
             onlineAlgMatching = initializeMatching(len(nodes_set),t)
             cost = cost + alpha
             counter = 0
-        
+        counter = counter + 1
         # Early exit based on maxRequests
         if t >= maxRequests:
             break
@@ -286,10 +286,10 @@ if alg == "pred":
             
             edge_weights = nx.get_edge_attributes(tempGraph, "weight")
             if np.sum(list(edge_weights.values())) >= alpha/3:
-                print("Found")
+                # print("Found")
                 # Get prediction and then reconfigure
                 if len(offMatching) > 0:
-                    print(len(offMatching))
+                    # print(len(offMatching))
                     predAlgMatching = initializeMatchingPred(len(nodes_set),list(offMatching), error)
                     cost = cost + alpha
                     predAlgTrackingGraph = initializeTrackingGraph(len(nodes_set))
