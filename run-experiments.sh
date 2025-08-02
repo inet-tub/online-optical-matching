@@ -10,6 +10,9 @@ if [ ! -d "$DIR/data" ]; then
 	mkdir $DIR/data
 fi
 
+
+#################### Download and prepare data ####################
+
 if [[ $1 -eq 1 ]];then
 	cd $DIR/data
 	wget https://nextcloud.inet.tu-berlin.de/s/mm5BBsDAHgb5wTR/download/hpc_cesar_nekbone.zip
@@ -30,13 +33,9 @@ if [[ $1 -eq 1 ]];then
 	cd $DIR
 fi
 
-# Compute OFF first
-# ALPHAS=($(seq 1 32))
-# ALPHAS=(1 2 4 8 16 32 64 128 256 512 1024)
-ALPHAS=(0 3 6 9 12 15 18 21 24 27 30)
+####################### Compute OFF first #############################
+ALPHAS=(0 3 6 9 12 15 18 21 24 27 30 32 64 128 256 512 1024 2048 4096 8192 16384 32768)
 TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib" "HPC-Combined" "pFabric")
-# TRACES=("pFabric")
-# TRACES=("HPC-Boxlib")
 MAXREQUESTS=1000000
 NUMNODES=32
 COMPRESS=0
@@ -57,9 +56,10 @@ while [[ $(ps aux| grep compute-off | wc -l) -gt 1 ]];do
 	echo "waiting for off computations..."
 done
 
+####################### Run algorithms #############################
+
 ALGS=("det" "oblivious" "staticoff" "offline")
-# ALGS=("det" "oblivious" "staticoff")
-# ALGS=("det" "oblivious" "staticoff")
+
 OUTFILE=$DIR/results/results.csv
 
 echo "trace alg alpha error cost" > $OUTFILE
@@ -77,6 +77,8 @@ for TRACE in ${TRACES[@]};do
 	done
 done
 
+####################### Run oblivious #############################
+
 OBLS=(2 4 16 64)
 for TRACE in ${TRACES[@]};do
 	for ALG in ${OBLS[@]};do
@@ -91,6 +93,7 @@ for TRACE in ${TRACES[@]};do
 	done
 done
 
+####################### Run PRED #############################
 ALG="pred"
 ERRORS=(0 1 2 3 4 5 6 7 8)
 for TRACE in ${TRACES[@]};do
