@@ -9,106 +9,141 @@ Created on Thu Jan 23 00:36:46 2025
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-import matplotlib.colors as colors
 from matplotlib import rcParams
 import sys
 #%%
 plots_dir = "plots/"
-# plots_dir = "/home/vamsi/src/phd/writings/rematching/0-current/plots/"
 
 results_dir="results/"
 
 df = pd.read_csv(results_dir+'results.csv',delimiter=' ')
-minValue = np.min(df['cost'])
-maxValue = np.max(df['cost'])
+df = df[df['alpha']!=0]
+
 #%%
-traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
+markers = (['o', 's', '^', 'D', 'v', 'x', '*', 'P', 'h'])
 
-algs = ["deterministic", "oblivious", "static" , "offline"]
+traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
+minValue={}
+maxValue={}
+# traces = ["pFabric"]
+# algs = ["deterministic", "oblivious-1","oblivious-2","oblivious-4","oblivious-16","oblivious-64", "static" , "offline"]
+algs = ["deterministic", "oblivious-1", "static" , "offline"]
 
+# algNames = ["Greedy", "OBL", "OBL-2", "OBL-4", "OBL-16", "OBL-64", "S-OFF", "OFF"]
 algNames = ["Greedy", "OBL", "S-OFF", "OFF"]
+algNames = {}
+algNames["deterministic"]="Greedy"
+algNames["oblivious-1"]="Oblivious"
+algNames["static"]="Static Offline"
+algNames["offline"]="Offline"
 
-numNodes = 64
-alphas = [2, 4, 6, 8, 10]
+numNodes = 32
+lowalpha = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
+alphas = [1, 2, 4, 8]
 alphas=[i*numNodes for i in alphas]
-errors = [0, 2, 4, 8, 16]
+alphas = lowalpha + alphas
+errors = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
-rcParams.update({'font.size': 24})
+rcParams.update({'font.size': 40})
 
 for trace in traces:
+    markerindex=0
     print(trace)
-    dft = df[(df['trace']==trace)&(df['alg']!="pred")]
-    arr = np.zeros((len(algs),len(alphas)))
-    for index, row in dft.iterrows():
-        i = algs.index(row['alg'])
-        j = alphas.index(row['alpha'])
-        arr[i,j] = row['cost']
+    dft = df[(df['trace']==trace)&(df['alg']!="pred")&(df['alg']!="oblivious-2")&(df['alg']!="oblivious-4")&(df['alg']!="oblivious-16")&(df['alg']!="oblivious-64")&(df["alpha"]!=0)&(df['alpha']<=1024)]
+    minValue[trace] = np.min(dft[(dft['trace']==trace)]['cost'])
+    maxValue[trace] = np.max(dft[(dft['trace']==trace)]['cost'])
+    
+    fig, ax = plt.subplots(1,1, figsize=(9, 9))
+    for alg in algs:
+        d = dft[(dft["alg"]==alg)]
+        d = d.sort_values(by="alpha", ascending=True)
+        ax.plot(d["alpha"], d['cost'],label=algNames[alg], lw = 4,marker=markers[markerindex],markersize=20)
+        markerindex=markerindex+1
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.set_ylim(10**3,10**8)
+    ax.xaxis.grid(True,ls='--')
+    ax.yaxis.grid(True,ls='--')
+    ax.set_xlabel('Reconfiguration cost ('+r'$\alpha$'+')')
+    ax.set_ylabel('Total cost')
+    # ax.legend(framealpha=0.1)
+    
+    fig_width = 3*len(labels)
+    fig_legend = plt.figure(figsize=(fig_width, 1))
+    
+    handles, labels = ax.get_legend_handles_labels()
+    legend = fig_legend.legend(
+        handles, labels,
+        loc='center',
+        ncol=len(labels),
+        frameon=False,
+        fontsize=18,
+        handlelength=2.5,
+        markerscale=1
+    )
+    fig_legend.tight_layout()
 
-    cmap = 'Blues'
-    # cmap = 'BrBG_r'
-    # cmap = 'hot_r'
-    # maxValue = np.max(arr)
-    # minValue = np.min(arr)
-    fig, ax = plt.subplots(1,1, figsize=(8, 6))
-    cax = ax.imshow(arr/minValue, cmap=cmap,norm=colors.LogNorm(vmin=1,vmax=maxValue/minValue,clip=True), aspect='auto')
+    fig_legend.savefig(plots_dir+'algs-legend.pdf')
     
-    # Add rounded annotations to each cell
-    for i in range(arr.shape[0]):
-        for j in range(arr.shape[1]):
-            text = str(int(np.ceil(arr[i,j]/minValue)))
-            ax.text(j, i, text, ha="center", va="center", color="black")
-    
-    fig.colorbar(cax, ax=ax, label='Noramlized Cost')
-    ax.set_title(trace)
-    ax.set_xlabel("Reconfiguration cost (" + r'$\alpha = x \cdot n$' + ")")
-    ax.set_xticks(np.arange(len(alphas)))
-    ax.set_xticklabels(np.arange(1,len(alphas)+1)*2)
-    ax.set_yticks(np.arange(len(algs)))
-    ax.set_yticklabels(algNames)
     fig.tight_layout()
     fig.savefig(plots_dir+'algs-'+trace+'.pdf')
-    # plt.show()
-    
-    
+
 #%%
-traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
+markers = ['o', 's', '^', 'D', 'v', 'x', '*', 'P', 'h']
+
+traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
+# traces = ["pFabric"]
 
 algs = ["pred"]
 
 algNames = ["PRED"]
-
-numNodes = 64
-alphas = [2, 4, 6, 8, 10]
+numNodes = 32
+lowalpha = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
+alphas = [1, 2, 4]
 alphas=[i*numNodes for i in alphas]
-errors = [0, 2, 4, 8, 16]
+alphas = lowalpha + alphas
+alphas = [3, 9, 27, 64, 128]
+errors = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
-rcParams.update({'font.size': 25})
+rcParams.update({'font.size': 40})
 
 for trace in traces:
-    dft = df[(df['trace']==trace)&(df['alg']=="pred")]
-    arr = np.zeros((len(errors),len(alphas)))
-    for index, row in dft.iterrows():
-        i = errors.index(row['error'])
-        j = alphas.index(row['alpha'])
-        arr[i,j] = row['cost']
-
-    cmap = 'Blues'
-    # cmap = 'BrBG_r'
-    # cmap = 'hot_r'
-    maxValue = np.max(arr)
-    minValue = np.min(arr)
-    fig, ax = plt.subplots(1,1, figsize=(8, 6))
-    cax = ax.imshow(arr/minValue, cmap=cmap, aspect='auto')
-    
-    fig.colorbar(cax, ax=ax, label='Noramlized Cost')
-    # ax.set_title(trace)
-    ax.set_xlabel("Reconfiguration cost (" + r'$\alpha = x \cdot n$' + ")")
-    ax.set_xticks(np.arange(len(alphas)))
-    ax.set_xticklabels(np.arange(1,len(alphas)+1)*2)
-    ax.set_ylabel('Error')
-    ax.set_yticks(np.arange(len(errors)))
-    ax.set_yticklabels(errors)
+    markerindex=0
+    dft = df[(df['trace']==trace)&(df['alg']=="pred")&(df['alpha']<=128)]
+    fig, ax = plt.subplots(1,1, figsize=(9, 9))
+    for alpha in alphas:
+        d = dft[(dft["alpha"]==alpha)]
+        d = d.sort_values(by="error", ascending=True)
+        ax.plot(2*d["error"], d['cost'],label=r'$\alpha =$'+str(alpha), lw = 4,marker=markers[markerindex],markersize=20)
+        markerindex=markerindex+1
+    ax.set_yscale('log')
+    # ax.set_xscale('log')
+    # ax.set_ylim(10**3,10**7)
+    ax.xaxis.grid(True,ls='--')
+    ax.yaxis.grid(True,ls='--')
+    ax.set_xlabel('Error')
+    ax.set_ylabel('Total cost')
+    ax.set_xticks(2*d["error"])
+    ax.set_xticklabels(2*d["error"],rotation=40)
+    # ax.legend(framealpha=0.1)
     fig.tight_layout()
+    
+    handles, labels = ax.get_legend_handles_labels()
+    fig_width = 2*len(labels)
+    fig_legend = plt.figure(figsize=(fig_width, 1))
+
+    legend = fig_legend.legend(
+        handles, labels,
+        loc='center',
+        ncol=len(labels),
+        frameon=False,
+        fontsize=18,
+        handlelength=2.5,
+        markerscale=1
+    )
+    fig_legend.tight_layout()
+
+    fig_legend.savefig(plots_dir+'pred-legend.pdf')
     fig.savefig(plots_dir+'pred-'+trace+'.pdf')
-    # plt.show()
+
+#%%

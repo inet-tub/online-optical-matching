@@ -1,15 +1,15 @@
 # online-optical-matching
 
-This repository contains the source code for the paper (under submission) `Leveraging Predictions for Optical Interconnect Reconfiguration`.
+This repository contains the source code for the paper (under submission) `Learning-Augmented Online Optical Interconnect Reconfiguration`.
 
 ## Algorithms
 
-The python file `run-algorithm.py` contains the implementation of the following algorithms:
+The python file `run-algorithm.py` contains the implementation of the following algorithms for rematching:
 
-- Offline (Algorithm 2. in the paper)
+- Offline
 - Static offline
-- Online greedy (Algorithm 1. in the paper)
-- Online greedy with predictions (Algorithm 3. in the paper). Here, predictions are based on the offline solution and by introducing a prediction error.
+- Online greedy
+- Online greedy with predictions. Here, predictions are based on the offline solution and by introducing a prediction error.
 - Oblivious
 
 
@@ -34,6 +34,10 @@ cd online-optical-matching
 ```
 - Install the required dependencies:
 ```bash
+chmod +x ./install-venv.sh
+./install-venv.sh
+source .venv/bin/activate
+uv pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
