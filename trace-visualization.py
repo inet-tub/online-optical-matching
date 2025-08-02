@@ -8,46 +8,27 @@ import sys
 import pickle
 #%%
 alpha = 100
-maxRequests = 10000 # set it to a lower value for small test cases
-numNodes = 64
+maxRequests = 100000000 # set it to a lower value for small test cases
+numNodes = 32
 
 plots_dir = "plots/"
 
-traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
+traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
 # traces=["HPC-Boxlib"]
-
-compress = 0 #int(sys.argv[1])
-k={}
-if compress == 1:
-    k["HPC-Mocfe"]=100
-    k["HPC-Nekbone"]=50
-    k["HPC-Boxlib"]=10
-    k["HPC-Combined"]=4
 
 tracefiles={}
 tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
 tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
 tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
 tracefiles["HPC-Combined"]="hpc_combined.csv"
-rcParams.update({'font.size': 24})
+tracefiles["pFabric"]="pfabric01.csv"
 
-def process_part(part):
-    grouped = part.groupby(['srcip', 'dstip']).size().reset_index(name='count')
-    return grouped
+rcParams.update({'font.size': 24})
 
 for trace in traces:
     df = pd.read_csv("data/"+tracefiles[trace])
-    data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]
     
-    if compress == 1:
-        K = k[trace]
-        split_size = len(data) // K
-        parts = [data.iloc[i * split_size:(i + 1) * split_size] for i in range(K)]
-        if len(data) % K != 0:
-            parts.append(data.iloc[K * split_size:])
-
-        processed_parts = [process_part(part) for part in parts]
-        data = pd.concat(processed_parts, ignore_index=True)
+    data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]
 
     # print (len(data))
     src_set = set(data["srcip"])
@@ -60,10 +41,6 @@ for trace in traces:
         dst = request["dstip"]
         requestMatrix[src][dst] += 1
     
-        
-    with open('data/'+str(trace)+'-'+str(alpha)+'.pkl','wb') as f:
-        pickle.dump(requestMatrix, f)
-        print("dump", trace)
     cmap = 'CMRmap_r'
     maxValue = np.max(requestMatrix)
     fig, ax = plt.subplots(1,1, figsize=(8, 6))

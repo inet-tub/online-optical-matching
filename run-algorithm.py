@@ -9,13 +9,14 @@ import sys
 import pickle
 #%%
 
-traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
+traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
 
 tracefiles={}
 tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
 tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
 tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
 tracefiles["HPC-Combined"]="hpc_combined.csv"
+tracefiles["pFabric"]="pfabric01.csv"
 
 trace = str(sys.argv[1])
 alpha = int(sys.argv[2])
@@ -28,7 +29,7 @@ lock = FileLock(outfile+".lock")
 compress = int(sys.argv[8])
 freq = int(sys.argv[9])
 
-alpha = alpha*numNodes
+alpha = alpha
 
 #%%
 k={}

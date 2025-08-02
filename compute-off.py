@@ -11,13 +11,14 @@ import pickle
 import sys
 
 
-traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined"]
+traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
 
 tracefiles={}
 tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
 tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
 tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
 tracefiles["HPC-Combined"]="hpc_combined.csv"
+tracefiles["pFabric"]="pfabric01.csv"
 
 def matching_with_weight_sum(graph, alpha, maxCardinality):
     matchings = nx.algorithms.matching.max_weight_matching(graph, maxcardinality=maxCardinality, weight='weight')
@@ -68,7 +69,7 @@ maxRequests = int(sys.argv[3])
 numNodes = int(sys.argv[4])
 compress = int(sys.argv[5])
 
-alpha = alpha*numNodes
+alpha = alpha
 
 k={}
 if compress == 1:
