@@ -17,9 +17,9 @@ traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
 # traces=["HPC-Boxlib"]
 
 tracefiles={}
-tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
-tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
-tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
+tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv-orig.csv"
+tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv-orig.csv"
+tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large-orig.csv"
 tracefiles["HPC-Combined"]="hpc_combined.csv"
 tracefiles["pFabric"]="pfabric01.csv"
 

@@ -44,7 +44,8 @@ pip install -r requirements.txt
 - Run the experiments
 ```bash
 ./chmod +x ./run-experiments.sh
-./run-experiments.sh
+./run-experiments.sh 1
+# The cmd arg indicates whether to download the datasets (1) or not (0).
 ```
 
 - The results will be saved in the `results` directory. Plot the figures using the `plot.py` script. The figures will be saved in the `plots` directory.
