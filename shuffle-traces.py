@@ -2,19 +2,19 @@ import numpy as np
 import pandas as pd
 #%%
 
-numNodes = 32
+numNodes = 1024*16
 traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib"]
 # traces=["HPC-Boxlib"]
 
 tracefiles={}
-tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
-tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
-tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
+tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe"
+tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone"
+tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large"
 
 for trace in traces:
-    df = pd.read_csv("data/"+tracefiles[trace])
+    df = pd.read_csv("data/"+tracefiles[trace]+'-orig.csv')
     
-    unique_nodes = np.arange(numNodes)
+    unique_nodes = np.arange(max(df["srcip"].max(), df["dstip"].max()) + 1)
     shuffled_nodes = np.random.permutation(unique_nodes)
     mapping = dict(zip(unique_nodes, shuffled_nodes))
     def remap_node(x):
@@ -25,4 +25,4 @@ for trace in traces:
     
     data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]
 
-    data.to_csv("data/"+tracefiles[trace], index=False)
+    data.to_csv("data/"+tracefiles[trace]+'.csv', index=False)

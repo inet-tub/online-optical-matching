@@ -131,6 +131,6 @@ for t, request in data.iterrows():
     	break
     # print("Constructing OFF timeslot =",t, " for alpha = ", alpha)
 
-with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'.pkl','wb') as f:
+with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'-'+str(numNodes)+'.pkl','wb') as f:
     pickle.dump(offlineAlgMatching, f)
     print("dump", alpha, trace)

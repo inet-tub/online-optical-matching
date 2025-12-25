@@ -26,16 +26,16 @@ fi
 
 if [[ $1 -eq 1 ]];then
 	cd $DIR/data
-	wget https://nextcloud.inet.tu-berlin.de/s/mm5BBsDAHgb5wTR/download/hpc_cesar_nekbone.zip
+	# wget https://nextcloud.inet.tu-berlin.de/s/mm5BBsDAHgb5wTR/download/hpc_cesar_nekbone.zip
 	unzip hpc_cesar_nekbone.zip
 	mv hpc_cesar_nekbone.csv hpc_cesar_nekbone-orig.csv
-	wget https://nextcloud.inet.tu-berlin.de/s/BiDe8RHzXcMWDbm/download/hpc_cesar_mocfe.zip
+	# wget https://nextcloud.inet.tu-berlin.de/s/BiDe8RHzXcMWDbm/download/hpc_cesar_mocfe.zip
 	unzip hpc_cesar_mocfe.zip
 	mv hpc_cesar_mocfe.csv hpc_cesar_mocfe-orig.csv
-	wget https://nextcloud.inet.tu-berlin.de/s/WcFsd5NweRDjSWr/download/hpc_exact_boxlib_multigrid_c_large.zip
+	# wget https://nextcloud.inet.tu-berlin.de/s/WcFsd5NweRDjSWr/download/hpc_exact_boxlib_multigrid_c_large.zip
 	unzip hpc_exact_boxlib_multigrid_c_large.zip
 	mv hpc_exact_boxlib_multigrid_c_large.csv hpc_exact_boxlib_multigrid_c_large-orig.csv
-	wget https://nextcloud.inet.tu-berlin.de/s/qezbedodDj3SHDH/download/p_fabric_trace_0_1.zip
+	# wget https://nextcloud.inet.tu-berlin.de/s/qezbedodDj3SHDH/download/p_fabric_trace_0_1.zip
 	unzip p_fabric_trace_0_1.zip
 	mv p_fabric_trace_0_1.csv pfabric01.csv
 	cd $DIR
@@ -47,30 +47,31 @@ if [[ $1 -eq 1 ]];then
 	cd $DIR
 	python3 trace-visualization.py
 fi
-
 ####################### Compute OFF first #############################
 ALPHAS=(0 3 6 9 12 15 18 21 24 27 30 32 64 128 256 512 1024 2048 4096 8192 16384 32768)
 TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib" "HPC-Combined" "pFabric")
 MAXREQUESTS=1000000
-NUMNODES=32
+SIZES=(32 64 128 256 1024)
 COMPRESS=0
 
-for TRACE in ${TRACES[@]};do
-	for ALPHA in ${ALPHAS[@]};do
-		while [[ $(ps aux| grep compute-off | wc -l) -gt $(( $(nproc) -2 )) ]];do
-			sleep 5
-			echo "waiting for cores"
+for NUMNODES in ${SIZES[@]};do
+	for TRACE in ${TRACES[@]};do
+		for ALPHA in ${ALPHAS[@]};do
+			while [[ $(ps aux| grep compute-off | wc -l) -gt $(( $(nproc) -2 )) ]];do
+				sleep 5
+				echo "waiting for cores"
+			done
+			(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $COMPRESS) &
 		done
-		(python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $COMPRESS) &
 	done
 done
-
 
 while [[ $(ps aux| grep compute-off | wc -l) -gt 1 ]];do
 	sleep 5
 	echo "waiting for off computations..."
 done
 
+exit
 ####################### Run algorithms #############################
 
 ALGS=("det" "oblivious" "staticoff" "offline")

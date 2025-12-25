@@ -176,3 +176,5 @@ plots/
 debian/
 debian.sif
 offline/
+debian.tar.gz
+.python-version
