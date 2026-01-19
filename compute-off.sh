@@ -26,7 +26,6 @@ fi
 
 if [[ $1 -eq 1 ]];then
 	cd $DIR/data
-	rm ./*.csv
 	# wget https://nextcloud.inet.tu-berlin.de/s/mm5BBsDAHgb5wTR/download/hpc_cesar_nekbone.zip
 	unzip hpc_cesar_nekbone.zip
 	cp hpc_cesar_nekbone.csv hpc_cesar_nekbone-orig.csv
@@ -50,8 +49,8 @@ if [[ $1 -eq 1 ]];then
 fi
 ####################### Compute OFF first #############################
 # ALPHAS=(0 3 6 9 12 15 18 21 24 27 30 32 64 128 256)
-ALPHAS=(0 1 2 4 6 8 10 12 14 16 18 20 32 64 256 512 1024)
-# ALPHAS=(32 64 128 256)
+# ALPHAS=(0 1 2 4 6 8 10 12 14 16 18 20)
+ALPHAS=(32 64 128 256)
 TRACES=("HPC-Mocfe" "HPC-Nekbone" "HPC-Boxlib" "HPC-Combined" "pFabric")
 MAXREQUESTS=10000000000
 SIZES=(32)
@@ -73,72 +72,4 @@ while [[ $(ps aux| grep compute-off | wc -l) -gt 1 ]];do
 	echo "waiting for off computations..."
 done
 
-# exit
-####################### Run algorithms #############################
-# ALPHAS=(0 1 2 4 6 8 10 12 14 16 18 20)
-# ALPHAS=(32 64 128 256)
-ALPHAS=(0 1 2 4 6 8 10 12 14 16 18 20 32 64 256 512 1024)
-ALGS=("det" "oblivious" "staticoff" "offline")
-
-OUTFILE=$DIR/results/results.csv
-
-echo "trace alg alpha error cost" > $OUTFILE
-for NUMNODES in ${SIZES[@]};do
-	for TRACE in ${TRACES[@]};do
-		for ALG in ${ALGS[@]};do
-			for ALPHA in ${ALPHAS[@]};do
-				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $(nproc) -2 )) ]];do
-					sleep 5
-					echo "waiting for cores to run $TRACE $ALG $ALPHA"
-				done
-				echo "running $ALG with $TRACE"
-				(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE $ALG 0 1) &
-			done
-		done
-	done
-done
-
-# ####################### Run oblivious #############################
-
-OBLS=(2 4 16 64)
-for NUMNODES in ${SIZES[@]};do
-	for TRACE in ${TRACES[@]};do
-		for ALG in ${OBLS[@]};do
-			for ALPHA in ${ALPHAS[@]};do
-				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $(nproc) -2 )) ]];do
-					sleep 5
-					echo "waiting for cores to run $TRACE $ALG $ALPHA"
-				done
-				echo "running oblivious with $ALG"
-				(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES 0 $OUTFILE "oblivious" 0 $ALG) &
-			done
-		done
-	done
-done
-
-####################### Run PRED #############################
-ALG="pred"
-ERRORS=(0 1 2 3 4 5 6 7 8 16)
-N=0
-for NUMNODES in ${SIZES[@]};do
-	for TRACE in ${TRACES[@]};do
-		for ERROR in ${ERRORS[@]};do
-			if [[ $ERROR -gt $(( $NUMNODES/4 )) ]];then
-				echo "Skipping $ERROR -gt $(( $NUMNODES/4 ))"
-				continue
-			fi
-			for ALPHA in ${ALPHAS[@]};do
-				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $(nproc) -2 )) ]];do
-					sleep 5
-					echo "waiting for cores to run $TRACE $ALG $ALPHA"
-				done
-				N=$(( N+1 ))
-				echo "pred $TRACE with $ALG, $NUMNODES, $ERROR, $ALPHA, $N"
-				(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $ERROR $OUTFILE $ALG 0 1) &
-			done
-		done
-	done
-done
-echo "Finished $N experiments"
-# ########################### Plot results ########################
-python3 plots.py
+exit

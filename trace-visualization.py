@@ -31,7 +31,7 @@ for trace in traces:
     n = max(df["srcip"].max(), df["dstip"].max()) + 1
     data = df[(df['srcip'] < n) & (df['dstip'] < n)]
 
-    # print (len(data))
+    print (len(data))
     src = data["srcip"].to_numpy()
     dst = data["dstip"].to_numpy()
     

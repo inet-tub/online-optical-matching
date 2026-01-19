@@ -1,136 +1,151 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import pickle
+
 import numpy as np
 import pandas as pd
-import json
-import random
 import networkx as nx
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-import matplotlib.colors as colors
-import time
-import pickle
-import sys
+from multiprocessing import Pool
+from scipy.optimize import linear_sum_assignment
 
 
-traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
+TRACEFILES = {
+    "HPC-Mocfe": "hpc_cesar_mocfe-orig.csv",
+    "HPC-Nekbone": "hpc_cesar_nekbone-orig.csv",
+    "HPC-Boxlib": "hpc_exact_boxlib_multigrid_c_large-orig.csv",
+    "HPC-Combined": "hpc_combined.csv",
+    "pFabric": "pfabric01.csv",
+}
 
-tracefiles={}
-tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
-tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
-tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
-tracefiles["HPC-Combined"]="hpc_combined.csv"
-tracefiles["pFabric"]="pfabric01.csv"
 
-def matching_with_weight_sum(graph, alpha, maxCardinality):
-    matchings = nx.algorithms.matching.max_weight_matching(graph, maxcardinality=maxCardinality, weight='weight')
-    total_weight = sum(graph[u][v]['weight'] for u, v in matchings)
-    return total_weight >= alpha, total_weight, matchings
-
-def initializeTrackingGraph(numNodes):
-    G = nx.complete_graph(numNodes)
+def initialize_tracking_graph(n: int) -> nx.Graph:
+    G = nx.complete_graph(n)
     nx.set_edge_attributes(G, 0, "weight")
     return G
 
-def initializeMatching(numNodes, offset):
-    if numNodes % 2 != 0:
-        exit("Error: Number of nodes must be even")
 
-    G = nx.Graph()
-    G.add_nodes_from(range(0,numNodes))
-    for i in range(numNodes):
-        if i%2 == 0:
-            G.add_edge(i,(i+1+offset)%numNodes)
-    return G
-
-def incrementEdgeWeight(G, u, v):
-    if G.has_edge(u, v):
-        G[u][v]['weight'] = G[u][v]['weight'] + 1
-    else:
-        G.add_edge(u, v, weight=1)
-    return G
-
-def decrementEdgeWeight(G, u, v):
-    if G.has_edge(u, v):
-        G[u][v]['weight'] = min([G[u][v]['weight'] - 1, 0])
-    else:
-        G.add_edge(u, v, weight=1)
-    return G
-
-def divideEdgeWeights (G, divisor):
-    for u, v in G.edges:
-        if G.has_edge(u, v):
-            G[u][v]['weight'] = G[u][v]['weight'] / divisor
-        else:
-            G.add_edge(u, v, weight=1)
-    return G
-
-trace = str(sys.argv[1])
-alpha = int(sys.argv[2])
-maxRequests = int(sys.argv[3])
-numNodes = int(sys.argv[4])
-compress = int(sys.argv[5])
-
-alpha = alpha
-
-k={}
-if compress == 1:
-    k["HPC-Mocfe"]=100
-    k["HPC-Nekbone"]=50
-    k["HPC-Boxlib"]=10
-    k["HPC-Combined"]=4
-
-def process_part(part):
-    grouped = part.groupby(['srcip', 'dstip']).size().reset_index(name='count')
-    return grouped
-
-df = pd.read_csv("data/"+tracefiles[trace])
-data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]
-src_set = set(data["srcip"])
-dst_set = set(data["dstip"])
-nodes_set = np.arange(max(len(src_set),len(dst_set)))
-numNodes = len(nodes_set)
-
-if compress == 1:
-    K = k[trace]
-    split_size = len(data) // K
-    parts = [data.iloc[i * split_size:(i + 1) * split_size] for i in range(K)]
-    if len(data) % K != 0:
-        parts.append(data.iloc[K * split_size:])
-
-    processed_parts = [process_part(part) for part in parts]
-    data = pd.concat(processed_parts, ignore_index=True)
-
-
-offlineAlgTrackingGraph = initializeTrackingGraph(len(nodes_set))
-offlineAlgMatching = list()
-prevTime = 0
-t = 0
-cost = 0
-
-# Construct the offline algorithm
-for t, request in data.iterrows():
-    src = request["srcip"]
-    dst = request["dstip"]
-    offlineAlgTrackingGraph = incrementEdgeWeight(offlineAlgTrackingGraph, src,dst)
-    # Find the maximum weight maximal matching
-    foundMax, matchingWeight, matchingOFF = matching_with_weight_sum(offlineAlgTrackingGraph, alpha/3, True)
-    # Remove the maximal matching
-    tempGraph = offlineAlgTrackingGraph.copy()
-    for (u,v) in matchingOFF:
-        tempGraph[u][v]['weight']=0
+def max_weight_matching_and_weight(G: nx.Graph, maxcardinality: bool = True):
     
-    edge_weights = nx.get_edge_attributes(tempGraph, "weight")
-    if np.sum(list(edge_weights.values())) >= alpha/3:
-        offlineAlgMatching.append((matchingOFF, prevTime))
-        prevTime = t
-        offlineAlgTrackingGraph = initializeTrackingGraph(len(nodes_set))
+    # This is using blossom, really slow!!!
+    # M = nx.algorithms.matching.max_weight_matching(
+    #     G, maxcardinality=maxcardinality, weight="weight"
+    # )
+    # w = 0
+    # for u, v in M:
+    #     w += G[u][v]["weight"]
 
-    # Early exit based on maxRequests
-    if t >= maxRequests:
-    	if (len(offlineAlgMatching) == 0):
-    		offlineAlgMatching.append((matchingOFF, prevTime))
-    	break
-    # print("Constructing OFF timeslot =",t, " for alpha = ", alpha)
+    # Hungarian
+    n = G.number_of_nodes()
+    C = np.full((n, n), np.inf)
+    for i, j, data in G.edges(data=True):
+        w = data["weight"]
+        C[i, j] = -w
+        C[j, i] = -w
+    np.fill_diagonal(C, np.inf)
+    row, col = linear_sum_assignment(C)
+    M = [(i, j) for i, j in zip(row, col) if i < j]
+    w = sum(G[u][v]["weight"] for u, v in M)
 
-with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'-'+str(numNodes)+'.pkl','wb') as f:
-    pickle.dump(offlineAlgMatching, f)
-    print("dump", alpha, trace)
+    return M, w
+
+
+def run_one(trace: str, alpha: float, max_requests: int, num_nodes_filter: int,
+            data_dir: str, out_dir: str):
+    path = os.path.join(data_dir, TRACEFILES[trace])
+    df = pd.read_csv(
+        path,
+        usecols=["srcip", "dstip"],
+        dtype={"srcip": np.int32, "dstip": np.int32},
+    )
+
+    data = df[(df["srcip"] < num_nodes_filter) & (df["dstip"] < num_nodes_filter)].reset_index(drop=True)
+
+    if len(data) == 0:
+        raise RuntimeError(f"{trace}: no rows left after filtering with numNodes={num_nodes_filter}")
+
+    max_id = int(max(int(data["srcip"].max()), int(data["dstip"].max())))
+    n = max_id + 1
+
+    G = initialize_tracking_graph(n)
+
+    total_weight = 0
+
+    offline = []
+    prev_time = 0
+
+    for t, request in enumerate(data.itertuples(index=False)):
+        if t >= max_requests:
+            break
+
+        if t%10000 == 0:
+            print("OffProgress",trace,alpha,t,len(data))
+
+        src = int(request.srcip)
+        dst = int(request.dstip)
+
+        if src == dst:
+            continue
+
+        G[src][dst]["weight"] += 1
+        total_weight += 1
+
+        if total_weight > (alpha / 3.0):
+            M, matching_weight = max_weight_matching_and_weight(G, maxcardinality=True)
+            # print(t,len(data))
+
+            cost = total_weight - matching_weight
+
+            if cost >= (alpha / 3.0):
+                offline.append((M, prev_time))
+                prev_time = t
+
+                nx.set_edge_attributes(G, 0, "weight")
+                total_weight = 0
+
+    if len(offline) == 0:
+        M, _ = max_weight_matching_and_weight(G, maxcardinality=True)
+        offline.append((M, prev_time))
+
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"offline-matching-{trace}-{int(alpha)}-{num_nodes_filter}.pkl")
+    with open(out_path, "wb") as f:
+        pickle.dump(offline, f)
+
+    return (trace, out_path, n, len(data), len(offline))
+
+
+def _worker(args):
+    return run_one(*args)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--trace", default="pFabric", choices=list(TRACEFILES.keys()) + ["ALL"])
+    ap.add_argument("--alpha", type=float, required=True)
+    ap.add_argument("--maxRequests", type=int, required=True)
+    ap.add_argument("--numNodes", type=int, required=True, help="filter threshold (srcip,dstip < numNodes)")
+    ap.add_argument("--dataDir", default="data")
+    ap.add_argument("--outDir", default="offlineNew")
+    ap.add_argument("--workers", type=int, default=1, help="parallelize across traces (or alpha sweeps)")
+    args = ap.parse_args()
+
+    traces = list(TRACEFILES.keys()) if args.trace == "ALL" else [args.trace]
+
+    jobs = [
+        (tr, args.alpha, args.maxRequests, args.numNodes, args.dataDir, args.outDir)
+        for tr in traces
+    ]
+
+    if args.workers > 1 and len(jobs) > 1:
+        with Pool(processes=args.workers) as pool:
+            results = pool.map(_worker, jobs)
+    else:
+        results = [run_one(*jobs[0])] if len(jobs) == 1 else [run_one(*j) for j in jobs]
+
+    for trace, out_path, n, nrows, nsegments in results:
+        print(f"{trace}: n={n}, rows={nrows}, segments={nsegments}, wrote {out_path}")
+
+
+if __name__ == "__main__":
+    main()

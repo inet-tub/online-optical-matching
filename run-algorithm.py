@@ -7,16 +7,18 @@ import time
 from filelock import FileLock
 import sys
 import pickle
+from scipy.optimize import linear_sum_assignment
 #%%
 
 traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
 
-tracefiles={}
-tracefiles["HPC-Mocfe"]="hpc_cesar_mocfe.csv"
-tracefiles["HPC-Nekbone"]="hpc_cesar_nekbone.csv"
-tracefiles["HPC-Boxlib"]="hpc_exact_boxlib_multigrid_c_large.csv"
-tracefiles["HPC-Combined"]="hpc_combined.csv"
-tracefiles["pFabric"]="pfabric01.csv"
+tracefiles = {
+    "HPC-Mocfe": "hpc_cesar_mocfe-orig.csv",
+    "HPC-Nekbone": "hpc_cesar_nekbone-orig.csv",
+    "HPC-Boxlib": "hpc_exact_boxlib_multigrid_c_large-orig.csv",
+    "HPC-Combined": "hpc_combined.csv",
+    "pFabric": "pfabric01.csv",
+}
 
 trace = str(sys.argv[1])
 alpha = int(sys.argv[2])
@@ -32,39 +34,38 @@ freq = int(sys.argv[9])
 alpha = alpha
 
 #%%
-k={}
-if compress == 1:
-    k["HPC-Mocfe"]=100
-    k["HPC-Nekbone"]=50
-    k["HPC-Boxlib"]=10
-    k["HPC-Combined"]=4
-
 def process_part(part):
     grouped = part.groupby(['srcip', 'dstip']).size().reset_index(name='count')
     return grouped
 
 df = pd.read_csv("data/"+tracefiles[trace])
-data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]
-src_set = set(data["srcip"])
-dst_set = set(data["dstip"])
-nodes_set = np.arange(max(len(src_set),len(dst_set)))
-numNodes = len(nodes_set)
-
-if compress == 1:
-    K = k[trace]
-    split_size = len(data) // K
-    parts = [data.iloc[i * split_size:(i + 1) * split_size] for i in range(K)]
-    if len(data) % K != 0:
-        parts.append(data.iloc[K * split_size:])
-
-    processed_parts = [process_part(part) for part in parts]
-    data = pd.concat(processed_parts, ignore_index=True)
+data = df[(df["srcip"] < numNodes) & (df["dstip"] < numNodes)].reset_index(drop=True)
+if len(data) == 0:
+    raise RuntimeError(f"{trace}: no rows left after filtering with numNodes={numNodes}")
+# data = df[(df['srcip'] < numNodes) & (df['dstip'] < numNodes)]
+# src_set = set(data["srcip"])
+# dst_set = set(data["dstip"])
+# nodes_set = np.arange(max(len(src_set),len(dst_set)))
+max_id = int(max(int(data["srcip"].max()), int(data["dstip"].max())))
+num_nodes_filter = numNodes
+numNodes = max_id + 1
 
 #%%
 def matching_with_weight_sum(graph, alpha, maxCardinality):
-    matchings = nx.algorithms.matching.max_weight_matching(graph, maxcardinality=maxCardinality, weight='weight')
-    total_weight = sum(graph[u][v]['weight'] for u, v in matchings)
-    return total_weight >= alpha, total_weight, matchings
+    # matchings = nx.algorithms.matching.max_weight_matching(graph, maxcardinality=maxCardinality, weight='weight')
+    # total_weight = sum(graph[u][v]['weight'] for u, v in matchings)
+    G = graph
+    n = G.number_of_nodes()
+    C = np.full((n, n), np.inf)
+    for i, j, data in G.edges(data=True):
+        w = data["weight"]
+        C[i, j] = -w
+        C[j, i] = -w
+    np.fill_diagonal(C, np.inf)
+    row, col = linear_sum_assignment(C)
+    M = [(i, j) for i, j in zip(row, col) if i < j]
+    w = sum(G[u][v]["weight"] for u, v in M)
+    return w >= alpha, w, M
 
 def initializeTrackingGraph(numNodes):
     G = nx.complete_graph(numNodes)
@@ -89,21 +90,6 @@ def incrementEdgeWeight(G, u, v):
         G.add_edge(u, v, weight=1)
     return G
 
-def decrementEdgeWeight(G, u, v):
-    if G.has_edge(u, v):
-        G[u][v]['weight'] = min([G[u][v]['weight'] - 1, 0])
-    else:
-        G.add_edge(u, v, weight=1)
-    return G
-
-def divideEdgeWeights (G, divisor):
-    for u, v in G.edges:
-        if G.has_edge(u, v):
-            G[u][v]['weight'] = G[u][v]['weight'] / divisor
-        else:
-            G.add_edge(u, v, weight=1)
-    return G
-
 def initializeMatchingPred(numNodes, offMatching, error):
     if numNodes % 2 != 0:
         exit("Error: Number of nodes must be even")
@@ -113,8 +99,8 @@ def initializeMatchingPred(numNodes, offMatching, error):
     for i in range(error):
         e1 = offMatching[(i)%(len(offMatching))]
         e2 = offMatching[(len(offMatching)-1-i)%(len(offMatching))]
-        G.remove_edge(e1[0],e1[1])
-        G.remove_edge(e2[0],e2[1])
+        if G.has_edge(*e1): G.remove_edge(*e1)
+        if G.has_edge(*e2): G.remove_edge(*e2)
         G.add_edge(e1[0],e2[0])
         G.add_edge(e1[1],e2[1])
         
@@ -122,8 +108,8 @@ def initializeMatchingPred(numNodes, offMatching, error):
 
 # Online Deterministic Algorithm
 if alg == "det":
-    onlineAlgTrackingGraph = initializeTrackingGraph(len(nodes_set))
-    onlineAlgMatching = initializeMatching(len(nodes_set),10)
+    onlineAlgTrackingGraph = initializeTrackingGraph(numNodes)
+    onlineAlgMatching = initializeMatching(numNodes,10)
     t = 0
     cost = 0
     for t, request in data.iterrows():
@@ -153,12 +139,12 @@ if alg == "det":
     
     with lock:
         with open(outfile, 'a') as file:
-            print(trace, "deterministic", alpha, 0, cost,file=file)
+            print(trace, "deterministic", alpha, 0, cost, num_nodes_filter, file=file)
 
 # Oblivious Algorithm
 # Reconfigure blindly after every timeslot
 if alg == "oblivious":
-    onlineAlgMatching = initializeMatching(len(nodes_set),10)
+    onlineAlgMatching = initializeMatching(numNodes,10)
     t = 0
     cost = 0
     counter = 0
@@ -171,7 +157,7 @@ if alg == "oblivious":
         else:
             cost = cost + 1
         if counter >= freq:
-            onlineAlgMatching = initializeMatching(len(nodes_set),t)
+            onlineAlgMatching = initializeMatching(numNodes,t)
             cost = cost + alpha
             counter = 0
         counter = counter + 1
@@ -180,13 +166,13 @@ if alg == "oblivious":
             break
     with lock:
         with open(outfile, 'a') as file:
-            print(trace, "oblivious-"+str(freq), alpha, 0, cost,file=file)
+            print(trace, "oblivious-"+str(freq), alpha, 0, cost,num_nodes_filter,file=file)
 
 #%%
 
 # Static Optimal Offline Algorithm
 if alg == "staticoff":
-    staticAlgTrackingGraph = initializeTrackingGraph(len(nodes_set))
+    staticAlgTrackingGraph = initializeTrackingGraph(numNodes)
     t = 0
     cost = 0
     for t, request in data.iterrows():
@@ -214,7 +200,7 @@ if alg == "staticoff":
             break
     with lock:
         with open(outfile, 'a') as file:
-            print(trace, "static", alpha, 0, cost,file=file)
+            print(trace, "static", alpha, 0, cost,num_nodes_filter,file=file)
 
 #%%
 
@@ -222,7 +208,7 @@ if alg == "staticoff":
 if alg == "offline":
     cost = 0
     offlineAlgMatching = list()
-    with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'.pkl', 'rb') as f:
+    with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'-'+str(num_nodes_filter)+'.pkl', 'rb') as f:
         offlineAlgMatching = pickle.load(f)
     # Run the offline algorithm
     (matching , timeslot) = offlineAlgMatching.pop(0)
@@ -245,16 +231,16 @@ if alg == "offline":
 
     with lock:
         with open(outfile, 'a') as file:
-            print(trace, "offline", alpha, 0, cost,file=file)
+            print(trace, "offline", alpha, 0, cost,num_nodes_filter,file=file)
 #%%
 
 # Prediction augmented algorithm
 if alg == "pred":
-    predAlgTrackingGraph = initializeTrackingGraph(len(nodes_set))
-    predAlgMatching = initializeMatching(len(nodes_set),10)
+    predAlgTrackingGraph = initializeTrackingGraph(numNodes)
+    predAlgMatching = initializeMatching(numNodes,10)
     
     offlineAlgMatching = list()
-    with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'.pkl', 'rb') as f:
+    with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'-'+str(num_nodes_filter)+'.pkl', 'rb') as f:
         offlineAlgMatching = pickle.load(f)
     
     t = 0
@@ -262,7 +248,7 @@ if alg == "pred":
     
     # Run
     (offMatching, prevTime) = offlineAlgMatching.pop(0)
-    predAlgMatching = initializeMatchingPred(len(nodes_set),list(offMatching), error)
+    predAlgMatching = initializeMatchingPred(numNodes,list(offMatching), error)
     for t, request in data.iterrows():
         src = request["srcip"]
         dst = request["dstip"]
@@ -291,13 +277,13 @@ if alg == "pred":
                 # Get prediction and then reconfigure
                 if len(offMatching) > 0:
                     # print(len(offMatching))
-                    predAlgMatching = initializeMatchingPred(len(nodes_set),list(offMatching), error)
+                    predAlgMatching = initializeMatchingPred(numNodes,list(offMatching), error)
                     cost = cost + alpha
-                    predAlgTrackingGraph = initializeTrackingGraph(len(nodes_set))
+                    predAlgTrackingGraph = initializeTrackingGraph(numNodes)
 
         # Early exit based on maxRequests
         if t >= maxRequests:
             break
     with lock:
         with open(outfile, 'a') as file:
-            print(trace, "pred", alpha, error, cost,file=file)
+            print(trace, "pred", alpha, error, cost,num_nodes_filter,file=file)
