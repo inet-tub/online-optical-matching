@@ -24,7 +24,7 @@ Each tracefile consists of a sequence of requests that specifies the source and 
 
 # Reproducibility
 
-The code is written in Python3 (3.11.11) and tested on Linux (Fedora 41).
+The code is written in Python3 (3.12.3) and tested on Linux Fedora 41 and Ubuntu 24.04.
 To reproduce the results, please follow these steps:
 
 - Clone the repository:
@@ -45,7 +45,7 @@ pip install -r requirements.txt
 ```bash
 ./chmod +x ./run-experiments.sh
 ./run-experiments.sh 1
-# The cmd arg indicates whether to download the datasets (1) or not (0).
+# The cmd arg indicates whether to prepare and extract the datasets (1) or not (0).
 ```
 
 - The results will be saved in the `results` directory. Plot the figures using the `plot.py` script. The figures will be saved in the `plots` directory.
