@@ -126,7 +126,7 @@ def main():
     ap.add_argument("--maxRequests", type=int, required=True)
     ap.add_argument("--numNodes", type=int, required=True, help="filter threshold (srcip,dstip < numNodes)")
     ap.add_argument("--dataDir", default="data")
-    ap.add_argument("--outDir", default="offlineNew")
+    ap.add_argument("--outDir", default="offline")
     ap.add_argument("--workers", type=int, default=1, help="parallelize across traces (or alpha sweeps)")
     args = ap.parse_args()
 

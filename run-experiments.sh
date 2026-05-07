@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# set this to a lower value to limit the number of parallel processes, or reduce RAM usage
+# With 128 cores, the script consumes ~80GB RAM. With 32 cores, about 20-28GB RAM.
+NCORES=$(nproc)
+
 # Get absolute path to the directory of this file realpath
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -58,12 +62,12 @@ SIZES=(32)
 
 for NUMNODES in ${SIZES[@]};do
 	for ALPHA in ${ALPHAS[@]};do
-		while [[ $(ps aux| grep compute-off | wc -l) -gt $(( $(nproc) -2 )) ]];do
+		while [[ $(ps aux| grep compute-off | wc -l) -gt $(( $NCORES -2 )) ]];do
 			sleep 5
 			echo "waiting for cores"
 		done
 		echo "$NUMNODES, $ALPHA"
-		(python compute-off.py --trace ALL --alpha $ALPHA --maxRequests $MAXREQUESTS --numNodes $NUMNODES --workers 5) &
+		(python compute-off.py --trace ALL --alpha $ALPHA --maxRequests $MAXREQUESTS --numNodes $NUMNODES --workers 1) &
 		# (python3 compute-off.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES) &
 	done
 done
@@ -87,7 +91,7 @@ for NUMNODES in ${SIZES[@]};do
 	for TRACE in ${TRACES[@]};do
 		for ALG in ${ALGS[@]};do
 			for ALPHA in ${ALPHAS[@]};do
-				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $(nproc) -2 )) ]];do
+				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $NCORES -2 )) ]];do
 					sleep 5
 					echo "waiting for cores to run $TRACE $ALG $ALPHA"
 				done
@@ -105,7 +109,7 @@ for NUMNODES in ${SIZES[@]};do
 	for TRACE in ${TRACES[@]};do
 		for ALG in ${OBLS[@]};do
 			for ALPHA in ${ALPHAS[@]};do
-				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $(nproc) -2 )) ]];do
+				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $NCORES -2 )) ]];do
 					sleep 5
 					echo "waiting for cores to run $TRACE $ALG $ALPHA"
 				done
@@ -128,7 +132,7 @@ for NUMNODES in ${SIZES[@]};do
 				continue
 			fi
 			for ALPHA in ${ALPHAS[@]};do
-				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $(nproc) -2 )) ]];do
+				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $NCORES -2 )) ]];do
 					sleep 5
 					echo "waiting for cores to run $TRACE $ALG $ALPHA"
 				done

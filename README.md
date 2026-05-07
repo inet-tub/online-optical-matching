@@ -22,6 +22,8 @@ The python file `run-algorithm.py` contains the implementation of the following 
 
 Each tracefile consists of a sequence of requests that specifies the source and destination nodes.
 
+**Update:** The trace files are now hosted in this repository (`data/`) in .zip format, obtained directly from the above references.
+
 # Reproducibility
 
 The code is written in Python3 (3.12.3) and tested on Linux Fedora 41 and Ubuntu 24.04.
