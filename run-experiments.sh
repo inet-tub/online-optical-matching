@@ -143,6 +143,14 @@ for NUMNODES in ${SIZES[@]};do
 		done
 	done
 done
+
+while [[ $(ps aux| grep run-algorithm | wc -l) -gt 1 ]];do
+	sleep 5
+	echo "waiting for experiments to finish..."
+done
+
 echo "Finished $N experiments"
+echo "All experiments finished, results in $OUTFILE"
 # ########################### Plot results ########################
 python3 plots.py
+echo "Plots generated in $DIR/plots"
