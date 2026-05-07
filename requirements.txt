@@ -139,6 +139,7 @@ rope==1.14.0
 rpds-py==0.30.0
 rtree==1.4.1
 ruff==0.14.10
+scipy==1.17.0
 SecretStorage==3.5.0
 six==1.17.0
 snowballstemmer==3.0.1
