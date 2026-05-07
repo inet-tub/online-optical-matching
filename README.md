@@ -43,7 +43,7 @@ pip install -r requirements.txt
 
 - Run the experiments
 ```bash
-./chmod +x ./run-experiments.sh
+chmod +x ./run-experiments.sh
 ./run-experiments.sh 1
 # The cmd arg indicates whether to prepare and extract the datasets (1) or not (0).
 ```
