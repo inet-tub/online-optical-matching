@@ -51,6 +51,15 @@ num_nodes_filter = numNodes
 numNodes = max_id + 1
 
 #%%
+def matching_from_weight_matrix(weight_matrix, alpha):
+    n = weight_matrix.shape[0]
+    C = -weight_matrix.astype(float, copy=True)
+    np.fill_diagonal(C, np.inf)
+    row, col = linear_sum_assignment(C)
+    M = [(i, j) for i, j in zip(row, col) if i < j]
+    w = sum(weight_matrix[u][v] for u, v in M)
+    return w >= alpha, w, M
+
 def matching_with_weight_sum(graph, alpha, maxCardinality):
     # matchings = nx.algorithms.matching.max_weight_matching(graph, maxcardinality=maxCardinality, weight='weight')
     # total_weight = sum(graph[u][v]['weight'] for u, v in matchings)
@@ -105,6 +114,24 @@ def initializeMatchingPred(numNodes, offMatching, error):
         G.add_edge(e1[1],e2[1])
         
     return G
+
+def weight_outside_matching(graph, matching):
+    tempGraph = graph.copy()
+    for (u,v) in matching:
+        tempGraph[u][v]['weight']=0
+
+    edge_weights = nx.get_edge_attributes(tempGraph, "weight")
+    return np.sum(list(edge_weights.values()))
+
+def weight_outside_matrix_matching(weight_matrix, matching):
+    total_weight = np.sum(np.triu(weight_matrix, 1))
+    matching_weight = sum(weight_matrix[u][v] for u, v in matching)
+    return total_weight - matching_weight
+
+def incrementWeightMatrix(weight_matrix, u, v):
+    weight_matrix[u][v] = weight_matrix[u][v] + 1
+    weight_matrix[v][u] = weight_matrix[v][u] + 1
+    return weight_matrix
 
 # Online Deterministic Algorithm
 if alg == "det":
@@ -267,12 +294,7 @@ if alg == "pred":
             foundMax, matchingWeight, matching = matching_with_weight_sum(predAlgTrackingGraph, alpha/3, True)
             
             # Remove the maximal matching
-            tempGraph = predAlgTrackingGraph.copy()
-            for (u,v) in matching:
-                tempGraph[u][v]['weight']=0
-            
-            edge_weights = nx.get_edge_attributes(tempGraph, "weight")
-            if np.sum(list(edge_weights.values())) >= alpha/3:
+            if weight_outside_matching(predAlgTrackingGraph, matching) >= alpha/3:
                 # print("Found")
                 # Get prediction and then reconfigure
                 if len(offMatching) > 0:
@@ -287,3 +309,40 @@ if alg == "pred":
     with lock:
         with open(outfile, 'a') as file:
             print(trace, "pred", alpha, error, cost,num_nodes_filter,file=file)
+
+# Prediction augmented algorithm with a history-based prediction.
+if alg in ("pred-history", "PRED-History"):
+    predAlgWeights = np.zeros((numNodes, numNodes))
+    predAlgMatching = initializeMatching(numNodes,10)
+    
+    t = 0
+    cost = 0
+    
+    # Run
+    for t, request in data.iterrows():
+        src = request["srcip"]
+        dst = request["dstip"]
+        
+        predAlgWeights = incrementWeightMatrix(predAlgWeights, src,dst)
+        
+        if predAlgMatching.has_edge(src, dst):
+            cost = cost + 0
+        else:
+            cost = cost + 1
+            # Find the maximum weight matching of the current request weights.
+            foundMax, matchingWeight, matching = matching_from_weight_matrix(predAlgWeights, alpha/3)
+            
+            # Remove the maximal matching
+            if weight_outside_matrix_matching(predAlgWeights, matching) >= alpha/3:
+                # Send the request-history matching to PRED, then reset interval weights.
+                if len(matching) > 0:
+                    predAlgMatching = initializeMatchingPred(numNodes,list(matching), error)
+                    cost = cost + alpha
+                    predAlgWeights = np.zeros((numNodes, numNodes))
+
+        # Early exit based on maxRequests
+        if t >= maxRequests:
+            break
+    with lock:
+        with open(outfile, 'a') as file:
+            print(trace, "pred-history", alpha, error, cost,num_nodes_filter,file=file)
