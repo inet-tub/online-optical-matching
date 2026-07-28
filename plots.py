@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import matplotlib
 import sys
+import os
 #%%
 plots_dir = "plots/"
 
@@ -102,7 +103,7 @@ markers = ['o', 's', '^', 'D', 'v', 'x', '*', 'P', 'h', 'd']
 traces = ["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
 # traces = ["pFabric"]
 
-pred_algs = [("pred", "pred", "PRED"), ("pred-history", "pred-history", "PRED-History")]
+pred_algs = [("pred", "pred", "PRED")]
 numNodes = 32
 # lowalpha = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
 # lowalpha = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
@@ -121,17 +122,23 @@ for pred_alg, plot_prefix, display_name in pred_algs:
         dft = df[(df['trace']==trace)&(df['alg']==pred_alg)&(df['alpha']<=1024)]
         if dft.empty:
             continue
+        dftPredHistory = df[(df["trace"]==trace)&(df["alg"]=="pred-history")&(df["error"]==0)&(df["numNodes"]==numNodes)&(df["alpha"]<=1024)]
         dfSoff = df[(df['trace']==trace)&(df['alg']!="pred")&(df['alg']!="pred-history")&(df['alg']!="oblivious-2")&(df['alg']!="oblivious-4")&(df['alg']!="oblivious-16")&(df['alg']!="oblivious-64")&(df["alpha"]!=0)&(df['alpha']<=1024)]
         dprime = dfSoff[(dfSoff["alg"]=="static")]
         soff = list(dprime["cost"])[0]/10**3
         fig, ax = plt.subplots(1,1, figsize=(10, 9))
-        ax.set_prop_cycle(color=plt.cm.Greys(np.linspace(0.4, 0.9, 10)))
+        colors = plt.cm.Greys(np.linspace(0.4, 0.9, 10))
+        ax.set_prop_cycle(color=colors)
         xtick_errors = []
         for alpha in alphas:
             d = dft[(dft["alpha"]==alpha)]
             d = d.sort_values(by="error", ascending=True)
             print(display_name, d, alpha)
-            ax.plot(2*d["error"], d['cost']/10**3,label=r'$\alpha =$'+str(alpha), lw = 4,marker=markers[markerindex],markersize=20)
+            color = colors[markerindex % len(colors)]
+            ax.plot(2*d["error"], d['cost']/10**3,label=r'$\alpha =$'+str(alpha), lw = 4,marker=markers[markerindex],markersize=20,color=color)
+            dHistory = dftPredHistory[(dftPredHistory["alpha"]==alpha)]
+            if not dHistory.empty:
+                ax.axhline(list(dHistory["cost"])[0]/10**3, ls=':', lw=4, c=color)
             xtick_errors = d["error"]
             markerindex=markerindex+1
             # print(markerindex)
@@ -157,12 +164,14 @@ for pred_alg, plot_prefix, display_name in pred_algs:
         # ax.set_yticks([10**4,10**6,10**8,10**10])
         ax.xaxis.grid(True,ls='--')
         ax.yaxis.grid(True,ls='--')
-        ax.set_xlabel('Error')
+        ax.set_xlabel('Error (OFF)')
         ax.set_ylabel(r'Total cost')
         ax.set_xticks(2*xtick_errors)
         ax.set_xticklabels(2*xtick_errors,rotation=40)
         
         ax.axhline(soff,ls='--',c='r',label="Static Offline (S-OFF)")
+        if not dftPredHistory.empty:
+            ax.plot([], [], ls=':', lw=4, c='k', label="PRED-History")
         # ax.legend(framealpha=0.1)
         fig.tight_layout()
         
@@ -183,5 +192,47 @@ for pred_alg, plot_prefix, display_name in pred_algs:
 
         fig_legend.savefig(plots_dir+plot_prefix+'-legend.pdf')
         fig.savefig(plots_dir+plot_prefix+'-'+trace+'.pdf')
+
+#%%
+plt.close('all')
+
+real_error_histogram_path = results_dir+'pred-history-real-error-histogram.csv'
+
+if os.path.exists(real_error_histogram_path):
+    dfHist = pd.read_csv(real_error_histogram_path)
+    dfHist = dfHist[(dfHist["dummy_error"]==0)&(dfHist["alpha"]!=0)&(dfHist["alpha"]<=1024)]
+
+    for trace in traces:
+        d = dfHist[(dfHist["trace"]==trace)&(dfHist["numNodes"]==numNodes)]
+        d = d.groupby("real_error", as_index=False)["count"].sum()
+        d = d.sort_values(by="real_error", ascending=True)
+        if d.empty:
+            continue
+
+        fig, ax = plt.subplots(1,1, figsize=(10, 9))
+        ax.bar(d["real_error"], d["count"], width=0.8)
+        ax.set_yscale('log')
+        ax.xaxis.grid(True,ls='--')
+        ax.yaxis.grid(True,ls='--')
+        ax.set_xlabel('Error (OFF)')
+        ax.set_ylabel('Count')
+        fig.tight_layout()
+        fig.savefig(plots_dir+'pred-history-real-error-hist-'+trace+'.pdf')
+        plt.close(fig)
+
+    d = dfHist[dfHist["numNodes"]==numNodes]
+    d = d.groupby("real_error", as_index=False)["count"].sum()
+    d = d.sort_values(by="real_error", ascending=True)
+    if not d.empty:
+        fig, ax = plt.subplots(1,1, figsize=(10, 9))
+        ax.bar(d["real_error"], d["count"], width=0.8)
+        ax.set_yscale('log')
+        ax.xaxis.grid(True,ls='--')
+        ax.yaxis.grid(True,ls='--')
+        ax.set_xlabel('Error (OFF)')
+        ax.set_ylabel('Count')
+        fig.tight_layout()
+        fig.savefig(plots_dir+'pred-history-real-error-hist-all.pdf')
+        plt.close(fig)
 
 #%%

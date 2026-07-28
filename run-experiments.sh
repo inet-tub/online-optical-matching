@@ -151,6 +151,8 @@ while [[ $(ps aux| grep run-algorithm | wc -l) -gt 1 ]];do
 	echo "waiting for experiments to finish..."
 done
 
+./extract-pred-history.error.sh
+
 echo "Finished $N experiments"
 echo "All experiments finished, results in $OUTFILE"
 # ########################### Plot results ########################
