@@ -3,11 +3,11 @@ import pandas as pd
 import json
 import random
 import networkx as nx
+import rustworkx as rx
 import time
 from filelock import FileLock
 import sys
 import pickle
-from scipy.optimize import linear_sum_assignment
 #%%
 
 traces=["HPC-Mocfe", "HPC-Nekbone", "HPC-Boxlib", "HPC-Combined", "pFabric"]
@@ -51,29 +51,102 @@ num_nodes_filter = numNodes
 numNodes = max_id + 1
 
 #%%
-def matching_from_weight_matrix(weight_matrix, alpha):
+def ordered_edge(u, v):
+    u = int(u)
+    v = int(v)
+    if u < v:
+        return (u, v)
+    return (v, u)
+
+def validated_matching_edges(matching, numNodes, label):
+    used = set()
+    edges = []
+    for u, v in matching:
+        u = int(u)
+        v = int(v)
+        if u == v:
+            raise RuntimeError(f"{label}: self-loop edge {(u, v)} is not a matching edge")
+        if u < 0 or v < 0 or u >= numNodes or v >= numNodes:
+            raise RuntimeError(f"{label}: edge {(u, v)} is outside numNodes={numNodes}")
+        if u in used or v in used:
+            raise RuntimeError(
+                f"{label}: not a valid matching; repeated endpoint in edge {(u, v)}"
+            )
+        used.add(u)
+        used.add(v)
+        edges.append(ordered_edge(u, v))
+    if len(edges) > numNodes // 2:
+        raise RuntimeError(
+            f"{label}: has {len(edges)} edges, but numNodes={numNodes} allows at most {numNodes // 2}"
+        )
+    return sorted(edges)
+
+def matching_weight_from_edges(graph, matching):
+    return sum(graph[u][v]["weight"] for u, v in matching)
+
+def matrix_matching_weight(weight_matrix, matching):
+    return sum(weight_matrix[u][v] for u, v in matching)
+
+def matching_from_weighted_edges(numNodes, weighted_edges, maxCardinality, label):
+    graph = rx.PyGraph(multigraph=False)
+    graph.add_nodes_from(range(numNodes))
+    for u, v, weight in weighted_edges:
+        u = int(u)
+        v = int(v)
+        if u != v:
+            graph.add_edge(u, v, int(weight))
+    matching = rx.max_weight_matching(
+        graph, max_cardinality=maxCardinality, weight_fn=lambda weight: int(weight)
+    )
+    return validated_matching_edges(matching, numNodes, label)
+
+def graph_matching(graph, maxCardinality):
+    return matching_from_weighted_edges(
+        graph.number_of_nodes(),
+        (
+            (u, v, data["weight"])
+            for u, v, data in graph.edges(data=True)
+        ),
+        maxCardinality,
+        "max-weight matching",
+    )
+
+def matrix_matching(weight_matrix, maxCardinality):
     n = weight_matrix.shape[0]
-    C = -weight_matrix.astype(float, copy=True)
-    np.fill_diagonal(C, np.inf)
-    row, col = linear_sum_assignment(C)
-    M = [(i, j) for i, j in zip(row, col) if i < j]
-    w = sum(weight_matrix[u][v] for u, v in M)
+    return matching_from_weighted_edges(
+        n,
+        (
+            (i, j, weight_matrix[i][j])
+            for i in range(n)
+            for j in range(i + 1, n)
+        ),
+        maxCardinality,
+        "max-weight matching",
+    )
+
+def offline_matching_path(trace, alpha, num_nodes_filter):
+    return 'offline/offline-matching-'+str(trace)+'-'+str(alpha)+'-'+str(num_nodes_filter)+'.pkl'
+
+def load_offline_matchings(trace, alpha, num_nodes_filter, numNodes):
+    path = offline_matching_path(trace, alpha, num_nodes_filter)
+    with open(path, 'rb') as f:
+        raw_matchings = pickle.load(f)
+    return [
+        (
+            validated_matching_edges(matching, numNodes, f"{path} segment {idx}"),
+            timeslot,
+        )
+        for idx, (matching, timeslot) in enumerate(raw_matchings)
+    ]
+
+def matching_from_weight_matrix(weight_matrix, alpha):
+    M = matrix_matching(weight_matrix, True)
+    w = matrix_matching_weight(weight_matrix, M)
     return w >= alpha, w, M
 
 def matching_with_weight_sum(graph, alpha, maxCardinality):
-    # matchings = nx.algorithms.matching.max_weight_matching(graph, maxcardinality=maxCardinality, weight='weight')
-    # total_weight = sum(graph[u][v]['weight'] for u, v in matchings)
-    G = graph
-    n = G.number_of_nodes()
-    C = np.full((n, n), np.inf)
-    for i, j, data in G.edges(data=True):
-        w = data["weight"]
-        C[i, j] = -w
-        C[j, i] = -w
-    np.fill_diagonal(C, np.inf)
-    row, col = linear_sum_assignment(C)
-    M = [(i, j) for i, j in zip(row, col) if i < j]
-    w = sum(G[u][v]["weight"] for u, v in M)
+    M = graph_matching(graph, maxCardinality)
+    w = matching_weight_from_edges(graph, M)
     return w >= alpha, w, M
 
 def initializeTrackingGraph(numNodes):
@@ -102,6 +175,7 @@ def incrementEdgeWeight(G, u, v):
 def initializeMatchingPred(numNodes, offMatching, error):
     if numNodes % 2 != 0:
         exit("Error: Number of nodes must be even")
+    offMatching = validated_matching_edges(offMatching, numNodes, "prediction source matching")
     G = nx.Graph()
     G.add_nodes_from(range(0,numNodes))
     G.add_edges_from(offMatching)
@@ -112,7 +186,7 @@ def initializeMatchingPred(numNodes, offMatching, error):
         if G.has_edge(*e2): G.remove_edge(*e2)
         G.add_edge(e1[0],e2[0])
         G.add_edge(e1[1],e2[1])
-        
+    validated_matching_edges(G.edges(), numNodes, "prediction matching")
     return G
 
 def weight_outside_matching(graph, matching):
@@ -234,9 +308,7 @@ if alg == "staticoff":
 # Offline Algorithm
 if alg == "offline":
     cost = 0
-    offlineAlgMatching = list()
-    with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'-'+str(num_nodes_filter)+'.pkl', 'rb') as f:
-        offlineAlgMatching = pickle.load(f)
+    offlineAlgMatching = load_offline_matchings(trace, alpha, num_nodes_filter, numNodes)
     # Run the offline algorithm
     (matching , timeslot) = offlineAlgMatching.pop(0)
     for t, request in data.iterrows():
@@ -266,9 +338,7 @@ if alg == "pred":
     predAlgTrackingGraph = initializeTrackingGraph(numNodes)
     predAlgMatching = initializeMatching(numNodes,10)
     
-    offlineAlgMatching = list()
-    with open('offline/offline-matching-'+str(trace)+'-'+str(alpha)+'-'+str(num_nodes_filter)+'.pkl', 'rb') as f:
-        offlineAlgMatching = pickle.load(f)
+    offlineAlgMatching = load_offline_matchings(trace, alpha, num_nodes_filter, numNodes)
     
     t = 0
     cost = 0
@@ -312,8 +382,10 @@ if alg == "pred":
 
 # Prediction augmented algorithm with a history-based prediction.
 if alg in ("pred-history", "PRED-History"):
+    predHistoryError = 0
     predAlgWeights = np.zeros((numNodes, numNodes))
     predAlgMatching = initializeMatching(numNodes,10)
+    predAlgTotalWeight = 0
     
     t = 0
     cost = 0
@@ -324,11 +396,15 @@ if alg in ("pred-history", "PRED-History"):
         dst = request["dstip"]
         
         predAlgWeights = incrementWeightMatrix(predAlgWeights, src,dst)
+        if src != dst:
+            predAlgTotalWeight = predAlgTotalWeight + 1
         
         if predAlgMatching.has_edge(src, dst):
             cost = cost + 0
         else:
             cost = cost + 1
+            if predAlgTotalWeight < alpha/3:
+                continue
             # Find the maximum weight matching of the current request weights.
             foundMax, matchingWeight, matching = matching_from_weight_matrix(predAlgWeights, alpha/3)
             
@@ -336,13 +412,14 @@ if alg in ("pred-history", "PRED-History"):
             if weight_outside_matrix_matching(predAlgWeights, matching) >= alpha/3:
                 # Send the request-history matching to PRED, then reset interval weights.
                 if len(matching) > 0:
-                    predAlgMatching = initializeMatchingPred(numNodes,list(matching), error)
+                    predAlgMatching = initializeMatchingPred(numNodes,list(matching), predHistoryError)
                     cost = cost + alpha
                     predAlgWeights = np.zeros((numNodes, numNodes))
+                    predAlgTotalWeight = 0
 
         # Early exit based on maxRequests
         if t >= maxRequests:
             break
     with lock:
         with open(outfile, 'a') as file:
-            print(trace, "pred-history", alpha, error, cost,num_nodes_filter,file=file)
+            print(trace, "pred-history", alpha, predHistoryError, cost,num_nodes_filter,file=file)

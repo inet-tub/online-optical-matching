@@ -6,7 +6,7 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import linear_sum_assignment
+import rustworkx as rx
 
 
 TRACEFILES = {
@@ -20,7 +20,7 @@ TRACEFILES = {
 _WORKER_STATE = {}
 
 
-def canonical_edge(u, v):
+def ordered_edge(u, v):
     u = int(u)
     v = int(v)
     if u < v:
@@ -28,8 +28,28 @@ def canonical_edge(u, v):
     return (v, u)
 
 
-def canonical_matching(matching):
-    return {canonical_edge(u, v) for u, v in matching if int(u) != int(v)}
+def validated_matching_edges(matching, num_nodes, label):
+    used = set()
+    edges = set()
+    for u, v in matching:
+        u = int(u)
+        v = int(v)
+        if u == v:
+            raise RuntimeError(f"{label}: self-loop edge {(u, v)} is not a matching edge")
+        if u < 0 or v < 0 or u >= num_nodes or v >= num_nodes:
+            raise RuntimeError(f"{label}: edge {(u, v)} is outside numNodes={num_nodes}")
+        if u in used or v in used:
+            raise RuntimeError(
+                f"{label}: not a valid matching; repeated endpoint in edge {(u, v)}"
+            )
+        used.add(u)
+        used.add(v)
+        edges.add(ordered_edge(u, v))
+    if len(edges) > num_nodes // 2:
+        raise RuntimeError(
+            f"{label}: has {len(edges)} edges, but numNodes={num_nodes} allows at most {num_nodes // 2}"
+        )
+    return edges
 
 
 def initialize_matching(num_nodes, offset):
@@ -39,7 +59,7 @@ def initialize_matching(num_nodes, offset):
     matching = set()
     for i in range(num_nodes):
         if i % 2 == 0:
-            matching.add(canonical_edge(i, (i + 1 + offset) % num_nodes))
+            matching.add(ordered_edge(i, (i + 1 + offset) % num_nodes))
     return matching
 
 
@@ -49,10 +69,16 @@ def increment_weight_matrix(weight_matrix, u, v):
 
 
 def matching_from_weight_matrix(weight_matrix):
-    cost = -weight_matrix.astype(float, copy=True)
-    np.fill_diagonal(cost, np.inf)
-    row, col = linear_sum_assignment(cost)
-    matching = [(i, j) for i, j in zip(row, col) if i < j]
+    n = weight_matrix.shape[0]
+    graph = rx.PyGraph(multigraph=False)
+    graph.add_nodes_from(range(n))
+    for i in range(n):
+        for j in range(i + 1, n):
+            graph.add_edge(i, j, int(weight_matrix[i][j]))
+    matching = rx.max_weight_matching(
+        graph, max_cardinality=True, weight_fn=lambda weight: int(weight)
+    )
+    matching = sorted(validated_matching_edges(matching, n, "history matching"))
     weight = sum(weight_matrix[u][v] for u, v in matching)
     return matching, weight
 
@@ -61,6 +87,16 @@ def weight_outside_matching(weight_matrix, matching):
     total_weight = np.sum(np.triu(weight_matrix, 1))
     matching_weight = sum(weight_matrix[u][v] for u, v in matching)
     return total_weight - matching_weight
+
+
+def validate_offline_matchings(offline_matchings, offline_path, num_nodes):
+    return [
+        (
+            validated_matching_edges(matching, num_nodes, f"{offline_path} segment {idx}"),
+            timeslot,
+        )
+        for idx, (matching, timeslot) in enumerate(offline_matchings)
+    ]
 
 
 def load_trace(trace, num_nodes_filter, max_requests, data_dir):
@@ -122,10 +158,14 @@ def run_alpha(trace, alpha, max_requests, num_nodes_filter, offline_dir, data, n
     )
     with open(offline_path, "rb") as f:
         offline_matchings = pickle.load(f)
+    offline_matchings = validate_offline_matchings(
+        offline_matchings, offline_path, num_nodes
+    )
 
     offline_index = 0
     pred_matching = initialize_matching(num_nodes, 10)
     pred_weights = np.zeros((num_nodes, num_nodes))
+    pred_total_weight = 0
 
     event_rows = []
     errors = []
@@ -137,19 +177,23 @@ def run_alpha(trace, alpha, max_requests, num_nodes_filter, offline_dir, data, n
         dst = int(request.dstip)
 
         increment_weight_matrix(pred_weights, src, dst)
+        if src != dst:
+            pred_total_weight += 1
         offline_index = advance_offline_index(offline_matchings, offline_index, t)
 
-        if canonical_edge(src, dst) in pred_matching:
+        if ordered_edge(src, dst) in pred_matching:
             continue
 
         cost += 1
+        if pred_total_weight < alpha / 3.0:
+            continue
         history_matching, history_weight = matching_from_weight_matrix(pred_weights)
 
         if weight_outside_matching(pred_weights, history_matching) < alpha / 3.0:
             continue
 
-        history_edges = canonical_matching(history_matching)
-        off_edges = canonical_matching(offline_matchings[offline_index][0])
+        history_edges = validated_matching_edges(history_matching, num_nodes, "history matching")
+        off_edges = offline_matchings[offline_index][0]
         real_error = len(off_edges - history_edges)
         pred_only_edges = len(history_edges - off_edges)
         symmetric_diff_edges = len(off_edges ^ history_edges)
@@ -177,6 +221,7 @@ def run_alpha(trace, alpha, max_requests, num_nodes_filter, offline_dir, data, n
         pred_matching = history_edges
         cost += alpha
         pred_weights = np.zeros((num_nodes, num_nodes))
+        pred_total_weight = 0
 
     summary = {
         "trace": trace,

@@ -6,8 +6,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import networkx as nx
+import rustworkx as rx
 from multiprocessing import Pool
-from scipy.optimize import linear_sum_assignment
 
 
 TRACEFILES = {
@@ -26,26 +26,20 @@ def initialize_tracking_graph(n: int) -> nx.Graph:
 
 
 def max_weight_matching_and_weight(G: nx.Graph, maxcardinality: bool = True):
-    
-    # This is using blossom, really slow!!!
-    # M = nx.algorithms.matching.max_weight_matching(
-    #     G, maxcardinality=maxcardinality, weight="weight"
-    # )
-    # w = 0
-    # for u, v in M:
-    #     w += G[u][v]["weight"]
+    rx_graph = rx.PyGraph(multigraph=False)
+    rx_graph.add_nodes_from(range(G.number_of_nodes()))
+    edge_weights = {}
+    for u, v, data in G.edges(data=True):
+        edge = (min(int(u), int(v)), max(int(u), int(v)))
+        weight = int(data["weight"])
+        edge_weights[edge] = weight
+        rx_graph.add_edge(edge[0], edge[1], weight)
 
-    # Hungarian
-    n = G.number_of_nodes()
-    C = np.full((n, n), np.inf)
-    for i, j, data in G.edges(data=True):
-        w = data["weight"]
-        C[i, j] = -w
-        C[j, i] = -w
-    np.fill_diagonal(C, np.inf)
-    row, col = linear_sum_assignment(C)
-    M = [(i, j) for i, j in zip(row, col) if i < j]
-    w = sum(G[u][v]["weight"] for u, v in M)
+    M = rx.max_weight_matching(
+        rx_graph, max_cardinality=maxcardinality, weight_fn=lambda weight: int(weight)
+    )
+    M = sorted((min(int(u), int(v)), max(int(u), int(v))) for u, v in M)
+    w = sum(edge_weights[edge] for edge in M)
 
     return M, w
 

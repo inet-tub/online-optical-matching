@@ -121,27 +121,36 @@ for NUMNODES in ${SIZES[@]};do
 done
 
 ####################### Run PRED #############################
-PRED_ALGS=("pred" "pred-history")
 ERRORS=(0 1 2 3 4 5 6 7 8 16)
 N=0
 for NUMNODES in ${SIZES[@]};do
 	for TRACE in ${TRACES[@]};do
-		for ALG in ${PRED_ALGS[@]};do
-			for ERROR in ${ERRORS[@]};do
-				if [[ $ERROR -gt $(( $NUMNODES/4 )) ]];then
-					echo "Skipping $ERROR -gt $(( $NUMNODES/4 ))"
-					continue
-				fi
-				for ALPHA in ${ALPHAS[@]};do
-					while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $NCORES -2 )) ]];do
-						sleep 5
-						echo "waiting for cores to run $TRACE $ALG $ALPHA"
-					done
-					N=$(( N+1 ))
-					echo "pred $TRACE with $ALG, $NUMNODES, $ERROR, $ALPHA, $N"
-					(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $ERROR $OUTFILE $ALG 0 1) &
+		ALG="pred"
+		for ERROR in ${ERRORS[@]};do
+			if [[ $ERROR -gt $(( $NUMNODES/4 )) ]];then
+				echo "Skipping $ERROR -gt $(( $NUMNODES/4 ))"
+				continue
+			fi
+			for ALPHA in ${ALPHAS[@]};do
+				while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $NCORES -2 )) ]];do
+					sleep 5
+					echo "waiting for cores to run $TRACE $ALG $ALPHA"
 				done
+				N=$(( N+1 ))
+				echo "pred $TRACE with $ALG, $NUMNODES, $ERROR, $ALPHA, $N"
+				(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $ERROR $OUTFILE $ALG 0 1) &
 			done
+		done
+		ALG="pred-history"
+		ERROR=0
+		for ALPHA in ${ALPHAS[@]};do
+			while [[ $(ps aux| grep run-algorithm | wc -l) -gt $(( $NCORES -2 )) ]];do
+				sleep 5
+				echo "waiting for cores to run $TRACE $ALG $ALPHA"
+			done
+			N=$(( N+1 ))
+			echo "pred $TRACE with $ALG, $NUMNODES, $ERROR, $ALPHA, $N"
+			(python3 run-algorithm.py $TRACE $ALPHA $MAXREQUESTS $NUMNODES $ERROR $OUTFILE $ALG 0 1) &
 		done
 	done
 done
@@ -151,10 +160,8 @@ while [[ $(ps aux| grep run-algorithm | wc -l) -gt 1 ]];do
 	echo "waiting for experiments to finish..."
 done
 
-./extract-pred-history.error.sh
-
+./extract-pred-history-error.sh
+python3 plot.py
 echo "Finished $N experiments"
 echo "All experiments finished, results in $OUTFILE"
-# ########################### Plot results ########################
-python3 plots.py
 echo "Plots generated in $DIR/plots"

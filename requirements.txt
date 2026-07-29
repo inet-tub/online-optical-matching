@@ -81,6 +81,7 @@ nest-asyncio==1.6.0
 networkx==3.3
 numpy==2.2.5
 numpydoc==1.10.0
+rustworkx==0.18.0
 packaging==25.0
 pandas==2.2.3
 pandocfilters==1.5.1
